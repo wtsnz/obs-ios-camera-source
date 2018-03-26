@@ -191,7 +191,6 @@ add_library(obs-ios-camera-source MODULE
 	${obs-ios-camera-source_HEADERS})
 
 
-
 find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil)
 
 include_directories( 
@@ -226,8 +225,8 @@ if(WIN32)
 		"${LIBOBS_INCLUDE_DIR}/../${OBS_BUILDDIR_ARCH}/UI"
 	)
 
-	target_link_libraries(obs-ios-camera-source
-		"${OBS_FRONTEND_LIB}")
+	# target_link_libraries(obs-ios-camera-source
+		# "${OBS_FRONTEND_LIB}")
 
 
 
