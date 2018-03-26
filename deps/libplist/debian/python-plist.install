@@ -1,0 +1,2 @@
+usr/lib/python*/*-packages/*.so
+cython/plist.pxd /usr/include/plist/cython

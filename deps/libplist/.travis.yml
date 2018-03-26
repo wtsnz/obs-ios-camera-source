@@ -1,0 +1,62 @@
+dist: trusty
+sudo: false
+
+matrix:
+  include:
+    - os: osx
+      env: TARGET=x86_64-apple-darwin RID=osx-x64 RUN_TESTS=yes CREATE_DEB=no
+    - os: linux
+      env: TARGET=x86_64-unknown-linux-gnu RID=linux-x64 RUN_TESTS=yes CREATE_DEB=yes
+    - os: linux
+      env: TARGET=aarch64-linux-gnu RID=linux-arm64 RUN_TESTS=no CREATE_DEB=no
+
+language: c
+
+env:
+  global:
+  - CFLAGS=-fPIC
+  - LIBPLIST_VERSION_PREFIX=2.0.1
+
+addons:
+  apt:
+    packages:
+    - gcc-aarch64-linux-gnu
+    - binutils-aarch64-linux-gnu
+    - g++-aarch64-linux-gnu
+    - devscripts
+    - debhelper
+    - dh-autoreconf
+    - dput
+    - osc
+
+before_install:
+- test -n $CC && unset CC
+
+install:
+- pip install --user azure-cli
+
+script:
+- ./autogen.sh --prefix=$HOME/out --host=$TARGET --without-cython --enable-static=yes --enable-shared=no
+- make
+- if [[ "$RUN_TESTS" == "yes" ]]; then make check; fi
+
+after_success:
+- make install
+- tar -zcvf libplist-$RID.tar.gz -C $HOME/out .
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then az=$HOME/Library/Python/2.7/bin/az; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then az=$HOME/.local/bin/az; fi
+- $az storage blob upload -f libplist-$RID.tar.gz -c imobiledevice -n libplist-$RID-$LIBPLIST_VERSION_PREFIX-$TRAVIS_BUILD_NUMBER.tar.gz
+- if [[ "$CREATE_DEB" == "yes" ]]; then ./make-deb.sh xenial; fi
+- if [[ "$CREATE_DEB" == "yes" ]]; then ./make-rpm.sh; fi
+
+after_failure:
+- cat config.log
+
+deploy:
+  provider: releases
+  file: libplist.tar.gz
+  skip_cleanup: true
+  on:
+    tags: true
+  api-key:
+    secure: R19aXMblD6QHWIODHAlBc7hXEb3e6FJkpqmOBBf5IfS4AOAXHHaF4E7vED04Hw1j2P9rizgcQz5hRGPvt55WZ6zYh1/aoR28w1kjWsEpEY9qF3PpX60Ck53j0MmDmiiZwCalRwNMjC25OZB1rnKkLcrB7s+Jj+x7GkPHx5fO5lk=
