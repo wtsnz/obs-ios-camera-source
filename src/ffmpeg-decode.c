@@ -33,7 +33,8 @@ int ffmpeg_decode_init(struct ffmpeg_decode *decode, enum AVCodecID id)
 	decode->decoder = avcodec_alloc_context3(decode->codec);
 
 	ret = avcodec_open2(decode->decoder, decode->codec, NULL);
-	if (ret < 0) {
+	if (ret < 0)
+	{
 		ffmpeg_decode_free(decode);
 		return ret;
 	}
@@ -46,7 +47,8 @@ int ffmpeg_decode_init(struct ffmpeg_decode *decode, enum AVCodecID id)
 
 void ffmpeg_decode_free(struct ffmpeg_decode *decode)
 {
-	if (decode->decoder) {
+	if (decode->decoder)
+	{
 		avcodec_close(decode->decoder);
 		av_free(decode->decoder);
 	}
@@ -62,15 +64,24 @@ void ffmpeg_decode_free(struct ffmpeg_decode *decode)
 
 static inline enum video_format convert_pixel_format(int f)
 {
-	switch (f) {
-	case AV_PIX_FMT_NONE:    return VIDEO_FORMAT_NONE;
-	case AV_PIX_FMT_YUV420P: return VIDEO_FORMAT_I420;
-	case AV_PIX_FMT_NV12:    return VIDEO_FORMAT_NV12;
-	case AV_PIX_FMT_YUYV422: return VIDEO_FORMAT_YUY2;
-	case AV_PIX_FMT_UYVY422: return VIDEO_FORMAT_UYVY;
-	case AV_PIX_FMT_RGBA:    return VIDEO_FORMAT_RGBA;
-	case AV_PIX_FMT_BGRA:    return VIDEO_FORMAT_BGRA;
-	case AV_PIX_FMT_BGR0:    return VIDEO_FORMAT_BGRX;
+	switch (f)
+	{
+	case AV_PIX_FMT_NONE:
+		return VIDEO_FORMAT_NONE;
+	case AV_PIX_FMT_YUV420P:
+		return VIDEO_FORMAT_I420;
+	case AV_PIX_FMT_NV12:
+		return VIDEO_FORMAT_NV12;
+	case AV_PIX_FMT_YUYV422:
+		return VIDEO_FORMAT_YUY2;
+	case AV_PIX_FMT_UYVY422:
+		return VIDEO_FORMAT_UYVY;
+	case AV_PIX_FMT_RGBA:
+		return VIDEO_FORMAT_RGBA;
+	case AV_PIX_FMT_BGRA:
+		return VIDEO_FORMAT_BGRA;
+	case AV_PIX_FMT_BGR0:
+		return VIDEO_FORMAT_BGRX;
 	default:;
 	}
 
@@ -79,15 +90,24 @@ static inline enum video_format convert_pixel_format(int f)
 
 static inline enum audio_format convert_sample_format(int f)
 {
-	switch (f) {
-	case AV_SAMPLE_FMT_U8:   return AUDIO_FORMAT_U8BIT;
-	case AV_SAMPLE_FMT_S16:  return AUDIO_FORMAT_16BIT;
-	case AV_SAMPLE_FMT_S32:  return AUDIO_FORMAT_32BIT;
-	case AV_SAMPLE_FMT_FLT:  return AUDIO_FORMAT_FLOAT;
-	case AV_SAMPLE_FMT_U8P:  return AUDIO_FORMAT_U8BIT_PLANAR;
-	case AV_SAMPLE_FMT_S16P: return AUDIO_FORMAT_16BIT_PLANAR;
-	case AV_SAMPLE_FMT_S32P: return AUDIO_FORMAT_32BIT_PLANAR;
-	case AV_SAMPLE_FMT_FLTP: return AUDIO_FORMAT_FLOAT_PLANAR;
+	switch (f)
+	{
+	case AV_SAMPLE_FMT_U8:
+		return AUDIO_FORMAT_U8BIT;
+	case AV_SAMPLE_FMT_S16:
+		return AUDIO_FORMAT_16BIT;
+	case AV_SAMPLE_FMT_S32:
+		return AUDIO_FORMAT_32BIT;
+	case AV_SAMPLE_FMT_FLT:
+		return AUDIO_FORMAT_FLOAT;
+	case AV_SAMPLE_FMT_U8P:
+		return AUDIO_FORMAT_U8BIT_PLANAR;
+	case AV_SAMPLE_FMT_S16P:
+		return AUDIO_FORMAT_16BIT_PLANAR;
+	case AV_SAMPLE_FMT_S32P:
+		return AUDIO_FORMAT_32BIT_PLANAR;
+	case AV_SAMPLE_FMT_FLTP:
+		return AUDIO_FORMAT_FLOAT_PLANAR;
 	default:;
 	}
 
@@ -96,28 +116,39 @@ static inline enum audio_format convert_sample_format(int f)
 
 static inline enum speaker_layout convert_speaker_layout(uint8_t channels)
 {
-	switch (channels) {
-	case 0:     return SPEAKERS_UNKNOWN;
-	case 1:     return SPEAKERS_MONO;
-	case 2:     return SPEAKERS_STEREO;
-	case 3:     return SPEAKERS_2POINT1;
-	case 4:     return SPEAKERS_4POINT0;
-	case 5:     return SPEAKERS_4POINT1;
-	case 6:     return SPEAKERS_5POINT1;
-	case 8:     return SPEAKERS_7POINT1;
-	default:    return SPEAKERS_UNKNOWN;
+	switch (channels)
+	{
+	case 0:
+		return SPEAKERS_UNKNOWN;
+	case 1:
+		return SPEAKERS_MONO;
+	case 2:
+		return SPEAKERS_STEREO;
+	case 3:
+		return SPEAKERS_2POINT1;
+	case 4:
+		return SPEAKERS_4POINT0;
+	case 5:
+		return SPEAKERS_4POINT1;
+	case 6:
+		return SPEAKERS_5POINT1;
+	case 8:
+		return SPEAKERS_7POINT1;
+	default:
+		return SPEAKERS_UNKNOWN;
 	}
 }
 
 static inline void copy_data(struct ffmpeg_decode *decode, uint8_t *data,
-		size_t size)
+							 size_t size)
 {
 	size_t new_size = size + INPUT_BUFFER_PADDING_SIZE;
 
-	if (decode->packet_size < new_size) {
+	if (decode->packet_size < new_size)
+	{
 		decode->packet_buffer = brealloc(decode->packet_buffer,
-				new_size);
-		decode->packet_size   = new_size;
+										 new_size);
+		decode->packet_size = new_size;
 	}
 
 	memset(decode->packet_buffer + size, 0, INPUT_BUFFER_PADDING_SIZE);
@@ -125,9 +156,9 @@ static inline void copy_data(struct ffmpeg_decode *decode, uint8_t *data,
 }
 
 bool ffmpeg_decode_audio(struct ffmpeg_decode *decode,
-		uint8_t *data, size_t size,
-		struct obs_source_audio *audio,
-		bool *got_output)
+						 uint8_t *data, size_t size,
+						 struct obs_source_audio *audio,
+						 bool *got_output)
 {
 	AVPacket packet = {0};
 	int got_frame = false;
@@ -141,7 +172,8 @@ bool ffmpeg_decode_audio(struct ffmpeg_decode *decode,
 	packet.data = decode->packet_buffer;
 	packet.size = (int)size;
 
-	if (!decode->frame) {
+	if (!decode->frame)
+	{
 		decode->frame = av_frame_alloc();
 		if (!decode->frame)
 			return false;
@@ -166,8 +198,8 @@ bool ffmpeg_decode_audio(struct ffmpeg_decode *decode,
 		audio->data[i] = decode->frame->data[i];
 
 	audio->samples_per_sec = decode->frame->sample_rate;
-	audio->format          = convert_sample_format(decode->frame->format);
-	audio->speakers        =
+	audio->format = convert_sample_format(decode->frame->format);
+	audio->speakers =
 		convert_speaker_layout((uint8_t)decode->decoder->channels);
 
 	audio->frames = decode->frame->nb_samples;
@@ -180,9 +212,9 @@ bool ffmpeg_decode_audio(struct ffmpeg_decode *decode,
 }
 
 bool ffmpeg_decode_video(struct ffmpeg_decode *decode,
-		uint8_t *data, size_t size, long long *ts,
-		struct obs_source_frame *frame,
-		bool *got_output)
+						 uint8_t *data, size_t size, long long *ts,
+						 struct obs_source_frame *frame,
+						 bool *got_output)
 {
 	AVPacket packet = {0};
 	int got_frame = false;
@@ -194,28 +226,29 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode,
 	copy_data(decode, data, size);
 
 	av_init_packet(&packet);
-	packet.data     = decode->packet_buffer;
-	packet.size     = (int)size;
-	packet.pts      = *ts;
-//    packet.flags |= CODEC_FLAG_TRUNCATED; /* We may send incomplete frames */
-//    packet.flags |= CODEC_FLAG2_CHUNKS;
+	packet.data = decode->packet_buffer;
+	packet.size = (int)size;
+	packet.pts = *ts;
+	//    packet.flags |= CODEC_FLAG_TRUNCATED; /* We may send incomplete frames */
+	//    packet.flags |= CODEC_FLAG2_CHUNKS;
 
-	if (decode->codec->id == AV_CODEC_ID_H264 && obs_avc_keyframe(data, size)) {
-        packet.flags |= AV_PKT_FLAG_KEY;
-        printf("Packet is a keyframe\n");
-    }
-		
+	if (decode->codec->id == AV_CODEC_ID_H264 && obs_avc_keyframe(data, size))
+	{
+		packet.flags |= AV_PKT_FLAG_KEY;
+		printf("Packet is a keyframe\n");
+	}
 
-	if (!decode->frame) {
+	if (!decode->frame)
+	{
 		decode->frame = av_frame_alloc();
 		if (!decode->frame)
 			return false;
 	}
 
 	ret = avcodec_send_packet(decode->decoder, &packet);
-    printf("Return value: %i", ret);
-//    if (ret == 0)
-		ret = avcodec_receive_frame(decode->decoder, decode->frame);
+	printf("Return value: %i", ret);
+	//    if (ret == 0)
+	ret = avcodec_receive_frame(decode->decoder, decode->frame);
 
 	got_frame = (ret == 0);
 
@@ -227,13 +260,15 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode,
 	else if (!got_frame)
 		return true;
 
-	for (size_t i = 0; i < MAX_AV_PLANES; i++) {
-		frame->data[i]     = decode->frame->data[i];
+	for (size_t i = 0; i < MAX_AV_PLANES; i++)
+	{
+		frame->data[i] = decode->frame->data[i];
 		frame->linesize[i] = decode->frame->linesize[i];
 	}
 
 	new_format = convert_pixel_format(decode->frame->format);
-	if (new_format != frame->format) {
+	if (new_format != frame->format)
+	{
 		bool success;
 		enum video_range_type range;
 
@@ -241,25 +276,25 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode,
 		frame->full_range =
 			decode->frame->color_range == AVCOL_RANGE_JPEG;
 
-		range = frame->full_range ?
-			VIDEO_RANGE_FULL : VIDEO_RANGE_PARTIAL;
+		range = frame->full_range ? VIDEO_RANGE_FULL : VIDEO_RANGE_PARTIAL;
 
 		success = video_format_get_parameters(VIDEO_CS_601,
-				range, frame->color_matrix,
-				frame->color_range_min, frame->color_range_max);
-		if (!success) {
+											  range, frame->color_matrix,
+											  frame->color_range_min, frame->color_range_max);
+		if (!success)
+		{
 			blog(LOG_ERROR, "Failed to get video format "
-			                "parameters for video format %u",
-			                VIDEO_CS_601);
+							"parameters for video format %u",
+				 VIDEO_CS_601);
 			return false;
 		}
 	}
 
 	*ts = decode->frame->pkt_pts;
 
-	frame->width  = decode->frame->width;
+	frame->width = decode->frame->width;
 	frame->height = decode->frame->height;
-	frame->flip   = false;
+	frame->flip = false;
 
 	if (frame->format == VIDEO_FORMAT_NONE)
 		return false;

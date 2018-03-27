@@ -9,17 +9,11 @@ set (CMAKE_CXX_STANDARD 11)
 
 include(external/FindLibObs.cmake)
 
-#set(OBS_FRONTEND_LIB "E:/projects/obs-studio/build64/UI/obs-frontend-api/Debug/obs-frontend-api.lib")
-
 find_package(LibObs REQUIRED)
 
 if(WIN32)
 	find_library(WS2_32_LIBRARY ws2_32)
 endif()
-
-# find_package(Qt5Core REQUIRED)
-# find_package(Qt5WebSockets REQUIRED)
-# find_package(Qt5Widgets REQUIRED)
 
 # ---- libcnary
 
@@ -172,17 +166,15 @@ target_link_libraries(portal
 
 ## -- 
 
-# add_subdirectory(deps/libusbmuxd libusbmuxd)
-
 set(ENABLE_PROGRAMS false)
 
 set(obs-ios-camera-source_SOURCES
 	src/obs-ios-camera-plugin.cpp
-	src/obs-ios-camera-source-win.cpp
+	src/obs-ios-camera-source.cpp
 	src/ffmpeg-decode.c)
 
 set(obs-ios-camera-source_HEADERS
-	src/obs-ios-camera-source-win.h
+	src/obs-ios-camera-source.h
 	src/ffmpeg-decode.h)
 
 # --- Platform-independent build settings ---
@@ -199,9 +191,7 @@ include_directories(
 )
 
 if(MSVC)
-
 	# https://stackoverflow.com/q/33290879
-
 	# needed for some MSVC installations
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SAFESEH:NO")
 	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /SAFESEH:NO")
@@ -239,8 +229,6 @@ if(WIN32)
 
 	# target_link_libraries(obs-ios-camera-source
 		# "${OBS_FRONTEND_LIB}")
-
-
 
 	# --- Release package helper ---
 	# The "release" folder has a structure similar OBS' one on Windows
