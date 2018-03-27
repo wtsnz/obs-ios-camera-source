@@ -1,5 +1,5 @@
 <div align = "center">
-<img src=".github/obs-icon.svg" width="128" height="128" />
+<img src=".github/obs-logo.svg" width="128" height="128" />
 </div>
 
 

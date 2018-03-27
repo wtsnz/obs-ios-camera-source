@@ -11,11 +11,11 @@ matrix:
     script: "./CI/build-macos.sh"
     after_success:
     - "./CI/package-macos.sh"
-before_deploy:
+# before_deploy:
   # Set up git user name and tag this commit
-  - git config --local user.name "Will Townsend"
-  - git config --local user.email "will@townsend.io"
-  - git tag "$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)"
+  # - git config --local user.name "Will Townsend"
+  # - git config --local user.email "will@townsend.io"
+  # - git tag "$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)"
 deploy:
   provider: releases
   api_key:
@@ -25,3 +25,5 @@ deploy:
   skip_cleanup: true
   on:
     repo: wtsnz/obs-ios-camera-source
+    tags: true
+    
