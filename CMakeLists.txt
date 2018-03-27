@@ -274,7 +274,7 @@ if(WIN32)
 			"${CMAKE_COMMAND}" -E copy_directory
 				"${PROJECT_SOURCE_DIR}/data"
 				"${LIBOBS_INCLUDE_DIR}/../${OBS_BUILDDIR_ARCH}/rundir/$<CONFIG>/data/obs-plugins/obs-ios-camera-source")
-
+	)
 	# --- End of sub-section ---
 
 endif()
