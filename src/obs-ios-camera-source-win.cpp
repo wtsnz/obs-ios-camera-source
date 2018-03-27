@@ -1,42 +1,30 @@
+/*
+obs-ios-camera-source
+Copyright (C) 2018	Will Townsend <will@townsend.io>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program. If not, see <https://www.gnu.org/licenses/>
+*/
+
 #include <obs-module.h>
-// #include <obs-frontend-api.h>
-// #include <QAction>
-// #include <QMainWindow>
-// #include <QTimer>
 #include <chrono>
 #include <Portal.hpp>
 #include <usbmuxd.h>
 #include <obs-avc.h>
+
 #include "ffmpeg-decode.h"
 
-#define TEXT_INPUT_NAME obs_module_text("iOS Camera")
-
-int avc_nalu_type(const uint8_t *data, size_t size)
-{
-    const uint8_t *nal_start, *nal_end;
-    const uint8_t *end = data + size;
-    int type;
-    
-    nal_start = obs_avc_find_startcode(data, end);
-    while (true) {
-        while (nal_start < end && !*(nal_start++));
-        
-        if (nal_start == end)
-            break;
-        
-        type = nal_start[0] & 0x1F;
-        
-        return type;
-        
-//        if (type == OBS_NAL_SLICE_IDR || type == OBS_NAL_SLICE)
-//            return (type == OBS_NAL_SLICE_IDR);
-//
-//        nal_end = obs_avc_find_startcode(nal_start, end);
-//        nal_start = nal_end;
-    }
-    
-    return 0;
-}
+#define TEXT_INPUT_NAME obs_module_text("OBSIOSCamera.Title")
 
 class Decoder {
 	struct ffmpeg_decode decode;
@@ -49,30 +37,25 @@ public:
 	inline ffmpeg_decode *operator->() {return &decode;}
 };
 
-
 class IOSCameraInput: public portal::PortalDelegate {
 public:
-    obs_source_t *source;
 
+    obs_source_t *source;
 	portal::Portal		 portal;
 	Decoder      video_decoder;
-
 	bool         active = false;
-
 	obs_source_frame frame;
 
 	inline IOSCameraInput(obs_source_t *source_, obs_data_t *settings)
 		: source         (source_)
 	{
 		memset(&frame, 0, sizeof(frame));
-
-		blog(LOG_INFO, "Created plugin!!!");
-
+		
 		portal.startListeningForDevices();
         portal.delegate = this;
 		active = true;
 
-		//OnEncodedVideoData(AV_CODEC_ID_H264, data, size, startTime);
+		blog(LOG_INFO, "[obs-ios-camera-source] Started listening for devices");
 	}
 
 	inline ~IOSCameraInput()
@@ -81,11 +64,8 @@ public:
 	}
     
     void portalDeviceDidReceivePacket(std::vector<char> packet) {
-    
         unsigned char *data = (unsigned char *) packet.data();
-        
-        long long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-        
+        long long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();        
         OnEncodedVideoData(AV_CODEC_ID_H264, data, packet.size(), now);
     }
 
@@ -118,7 +98,6 @@ public:
 		}
 	}
 
-
 };
 
 static const char *GetIOSCameraInputName(void*)
@@ -146,7 +125,6 @@ static void DestroyIOSCameraInput(void *data)
 
 void RegisterIOSCameraSource()
 {
-	// SetLogCallback(DShowModuleLogCallback, nullptr);
 
 	obs_source_info info = {};
 	info.id              = "ios-camera-source";
@@ -160,69 +138,3 @@ void RegisterIOSCameraSource()
 	// info.get_properties  = GetDShowProperties;
 	obs_register_source(&info);
 }
-
-
-// bool obs_module_load(void) {
-
-//     obs_register_source(&usb_video_source_info);
-//     // Loading finished
-//     blog(LOG_INFO, "module loaded!");
-
-//     return true;
-// }
-
-// void obs_module_unload() {
-//     blog(LOG_INFO, "goodbye!");
-// }
-
-// struct usb_video_source {
-// 	obs_source_t *source;
-// 	// os_event_t   *stop_signal;
-
-// 	// left_right::left_right<av_video_info> video_info;
-
-// 	// FourCharCode fourcc;
-// 	// video_format video_format;
-
-//     obs_source_frame frame;
-
-// 	// pthread_t    thread;
-
-//     // dispatch_queue_t queue;
-//     // USBReceiver *receiver;
-//     // OBSUSBFrameSourceDelegate *usbFrameSourceDelegate;
-
-// 	bool         initialized;
-// };
-
-// static void *random_create(obs_data_t *settings, obs_source_t *source)
-// {
-//     blog(LOG_INFO, "Create the source");
-
-// 	struct usb_video_source *rt = (usb_video_source *)bzalloc(sizeof(struct usb_video_source));
-
-//     blog(LOG_INFO, "Initialised");
-
-// 	rt->initialized = true;
-
-// 	UNUSED_PARAMETER(settings);
-// 	UNUSED_PARAMETER(source);
-// 	return rt;
-// }
-
-
-// static const char *random_getname(void *unused)
-// {
-//     blog(LOG_INFO, "getting name");
-// 	UNUSED_PARAMETER(unused);
-// 	return "iPhone Camera";
-// }
-
-// static void random_destroy(void *data)
-// {
-// //    auto usbVideoSource = static_cast<usb_video_source *>(data);
-// //    auto *frame = &usb_video_source->frame;
-
-// //    delete frame;
-// }
-

@@ -246,6 +246,34 @@ if(WIN32)
 	# The "release" folder has a structure similar OBS' one on Windows
 	set(RELEASE_DIR "${PROJECT_SOURCE_DIR}/release")
 
+	add_custom_command(TARGET obs-ios-camera-source POST_BUILD
+		COMMAND if $<CONFIG:Release>==1 (
+			"${CMAKE_COMMAND}" -E make_directory
+			"${RELEASE_DIR}/data/obs-plugins/obs-ios-camera-source"
+			"${RELEASE_DIR}/obs-plugins/${ARCH_NAME}")
+			
+		COMMAND if $<CONFIG:Release>==1 ("${CMAKE_COMMAND}" -E copy_directory
+			"${PROJECT_SOURCE_DIR}/data"
+			"${RELEASE_DIR}/data/obs-plugins/obs-ios-camera-source")
+
+		COMMAND if $<CONFIG:Release>==1 ("${CMAKE_COMMAND}" -E copy 
+			"$<TARGET_FILE:obs-ios-camera-source>"
+			"${RELEASE_DIR}/obs-plugins/${ARCH_NAME}")
+
+		# Copy to obs-studio dev environment for immediate testing
+		COMMAND if $<CONFIG:Debug>==1 (
+			"${CMAKE_COMMAND}" -E copy
+				"$<TARGET_FILE:obs-ios-camera-source>"
+				"${LIBOBS_INCLUDE_DIR}/../${OBS_BUILDDIR_ARCH}/rundir/$<CONFIG>/obs-plugins/${ARCH_NAME}")
+
+		COMMAND if $<CONFIG:Debug>==1 (
+			"${CMAKE_COMMAND}" -E make_directory
+				"${LIBOBS_INCLUDE_DIR}/../${OBS_BUILDDIR_ARCH}/rundir/$<CONFIG>/data/obs-plugins/obs-ios-camera-source")
+
+		COMMAND if $<CONFIG:Debug>==1 (
+			"${CMAKE_COMMAND}" -E copy_directory
+				"${PROJECT_SOURCE_DIR}/data"
+				"${LIBOBS_INCLUDE_DIR}/../${OBS_BUILDDIR_ARCH}/rundir/$<CONFIG>/data/obs-plugins/obs-ios-camera-source")
 
 	# --- End of sub-section ---
 
