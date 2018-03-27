@@ -16,6 +16,9 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
+#ifndef PORTAL_SIMPLE_DATA_PACKET_PROTOCOL_H
+#define PORTAL_SIMPLE_DATA_PACKET_PROTOCOL_H
+
 #include <vector>
 
 namespace portal
@@ -49,3 +52,5 @@ class SimpleDataPacketProtocol
     std::vector<char> buffer;
 };
 }
+
+#endif
