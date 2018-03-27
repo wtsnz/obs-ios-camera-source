@@ -1,69 +1,27 @@
 language: cpp
-
-# env:
-#   global:
-#   # AWS key ID
-#   - secure: pAiNUGVbjP12BfnWPk0FFTkbnk4Tocvv88XiT3rzRqkQaD7/iyEogLBfHM4nOEgFiIMHbC41aE83w5JgRNPwn6mTgoQBOglzqq1tGuXfqPyV2VStk8beji1evubGoVjjPaoPTFyIdQc5GGxdHyogI/ed9Hb3ccyykYvjyolj9XoCiW42QHx60AHGwl+So+dEa8xydj9SLRPlZ/AitmI/cPVN3YotA7s37BLFiab54enxk7T4rwpR1nU0HVfoCpn5F4wZYxRq+LlSVFzC8vVE9cpDSLS5kjrZIZaT18tYG1/untCj+wqMIZbghaJXLtPSRW2YPHcJTz8q1YSXnJ19+0uiAIMAqaVv0kD5BAM97byYDBW+b9H6SYFkb/Pw/qcK9amMzMBjDPFpYFkl9Q2kzhsNs3HsZf/flSZjtrkQJiP3SOi/KvKzVK9X4Wym6hYZWHgmMTTYFrvr6BYnf2GkpfKNjm1d2kc0NNrq4d5H4NOEQB8MP+QH+o+BPeM6d9dthrUc1Pw+BXzOAr85CN4qtpPGoAl/Dbfgd6eu/88E2LpUufW2VFAOPWjykSOqzSN3orh7AaWuE34VFEnQ+2y3uIE8AKoyXzJv6zYkyNnNewKZeGe2kKYNwLn5UxQA9JEj7a+tvVevk4xBSkkjFAvjSG2z8/F1FXNbEfoLX1Hz/bU=
-#   # AWS key secret
-#   - secure: bGwljoP3E1OVBXLXox0O6p8kwQXLcNQ8YDKVa4H8u9Y+Ic7uqE4iV3rYS3ynNWSBMVRWY3ZbyClnhrCNwRhBAlcd8qWSJdpjVzs6HdQyzhuKa1P3V4FJPb7upGP/5R/DECGwex8Mun9dmXpYDak75LxfKIJUidPis5VDCYqul7k/xVVCou6Ctjpj7vQhWXDj2G/py+mdB8DERhymnQCtyK1Ziu8c4QlFKByZmnD72GFm/h3JPI1Pq1V2mz3x6x6GaYjb9Rdbd0UNwqjGQX4q2M/c3GEJa6B2JBCoTncawNZBNnPUF9qtv+zh0TNaNHMRWX13AJ/qYB+nVDub0C9b/6Mc48mt0Tv4ze15MproVrylZdV6qHYEG8yGPBqpTVbRP6gv6Y2TXIHWoTzqA+F/Gv2IDChyHXsld/MQQS2MSo5iaYktIrZKtX8Z0qAmTzPwIVBromaSI3vrE7UH0fRSQ6fAM8+Tn+MRthOBdqu23kS1dnG+X2CPbUhBfsJp0OSwVQD5jQtA51/sREVeGFiJvzQIkvwQDjb5MYilsRnwmoBXemkLmqaviXVY4rz1o5AIvz2pgZS2YggK1xHZCuI5tSjcNEkb77VwZTfsqrdDo9EJh6VgfdnGlHQhR2/A5hUJ4ANpJ/LgZlgfVp71Xg2GWQW6M4Znc5uj6A6xLBkO6FA=
-
 cache:
   directories:
   - node_modules
-
 matrix:
   include:
-  # - os: linux
-  #   env: _generate_docs
-  #   script: "./CI/generate-docs.sh"
-
-  # - os: linux
-  #   env: _linux_build
-  #   dist: trusty
-  #   sudo: required
-  #   services:
-  #   - docker
-  #   before_install:
-  #   - docker run -d --name xenial -v $(dirname $(pwd)):/root -v /home/travis/package:/package
-  #     -e TRAVIS_BRANCH="$TRAVIS_BRANCH" -e TRAVIS_TAG="$TRAVIS_TAG" -w /root nimmis/ubuntu:16.04
-  #   - docker exec -it xenial /root/obs-websocket/CI/install-dependencies-xenial.sh
-  #   script:
-  #   - docker exec -it xenial /root/obs-websocket/CI/build-xenial.sh
-  #   after_success:
-  #   - docker exec -it xenial /root/obs-websocket/CI/package-xenial.sh
-
   - os: osx
     env: _macos_build
     osx_image: xcode8.3
     before_install: "./CI/install-dependencies-macos.sh"
     script: "./CI/build-macos.sh"
-    after_success: 
-    - ./CI/package-macos.sh
-
+    after_success:
+    - "./CI/package-macos.sh"
+before_deploy:
+  # Set up git user name and tag this commit
+  - git config --local user.name "Will Townsend"
+  - git config --local user.email "will@townsend.io"
+  - git tag "$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)"
 deploy:
-# - provider: s3
-#   region: eu-central-1
-#   bucket: obs-websocket-linux-builds
-#   access_key_id: "$AWS_ID"
-#   secret_access_key: "$AWS_SECRET"
-#   local_dir: /home/travis/package
-#   skip_cleanup: true
-#   acl: public_read
-#   on:
-#     repo: Palakis/obs-websocket
-#     condition: 
-#     - "$TRAVIS_OS_NAME = linux"
-#     - "-d /home/travis/package"
-#     all_branches: true
-# - provider: s3
-#   region: eu-central-1
-#   bucket: obs-websocket-osx-builds
-#   access_key_id: "$AWS_ID"
-#   secret_access_key: "$AWS_SECRET"
-#   local_dir: release
-#   skip_cleanup: true
-#   acl: public_read
-#   on:
-#     repo: Palakis/obs-websocket
-#     condition: "$TRAVIS_OS_NAME = osx"
-#     all_branches: true
+  provider: releases
+  api_key:
+    secure: WSuSPQYQHH1jc8HtkPkElgmiEos2617xSGx8IMzWMRrerS2Ii7O8WMM8nY/msFuNmmf3AiTSatdxBZ5YBApCAQZqumWnLHxiNmwx5TVd0ojNd6TsoakcM3aleOiR7u16wXTNRJQjVlDYVJQhUztp9f9ReoMb+9iKHtJK+C5noVIrFRLqcTrzGxw5Viu8UWeA11t3/+OgDA62sRwZCVfUoQOTA6cTvRsdR2LF9tgkVOAtwGyvBLBQtDG0UWc2YFnOxnhm1w7m3EYBAxo7G+SORB1Ze70TxMsfqu6ZrUBdcnOPJ6ZbsEWxzmkCc6TSEl019MUmGuZ8JN+d4NGv5oiFLzGoeaNNpJ0bE2tIIE11p444IyixKSkV0wh/mT1yF4YPCDUUjxGh0u+iudfnx1Wj1adFm3GiBce/EajljyuTm7zrawSENLHVNdtl2X+vOSftKg3TeGYRxrWDwRo67l/5aHFS8NOMqiqh5lVs+URifAefIsAz5lAL5d6DVPqW1ipEbLnMrnAdlycpDP+x0e+dIbQHhXQUMr0HtiUgtEWylSihS8bE1CJpu5IMS9EMy0CJWP8QftkjDPnAZbM1JdJv83IepzFhGhbP4I33sQtMj/fh+QlzU/bDR9+Gpo0GV3gkTkvnK475QKcfaML0ConiRd50PrqXDhd6WjA3eUMuobs=
+  file_glob: true
+  file: release/*
+  skip_cleanup: true
+  on:
+    repo: wtsnz/obs-ios-camera-source
