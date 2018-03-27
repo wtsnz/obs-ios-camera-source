@@ -56,7 +56,7 @@ class IOSCameraInput : public portal::PortalDelegate
 		portal.delegate = this;
 		active = true;
 
-		blog(LOG_INFO, "[obs-ios-camera-source] Started listening for devices");
+		blog(LOG_INFO, "Started listening for devices");
 	}
 
 	inline ~IOSCameraInput()
