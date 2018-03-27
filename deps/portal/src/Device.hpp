@@ -1,126 +1,131 @@
+/*
+portal
+Copyright (C) 2018	Will Townsend <will@townsend.io>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program. If not, see <https://www.gnu.org/licenses/>
+*/
+
 #include <map>
 #include <string>
 #include <vector>
 #include <iostream>
-
 #include <usbmuxd.h>
 
-// #include <boost/cstdint.hpp>
-// #include <boost/shared_ptr.hpp>
 #include "Protocol.hpp"
 #include "Channel.hpp"
 
 namespace portal
 {
-	///Forward reference so that we can be best friends
-	class Portal;
 
-    class DeviceDelegate {
-    public:
-        virtual void deviceDidConnect() = 0;
-        virtual void deviceDidDisconnect() = 0;
-        
-        virtual ~DeviceDelegate() {};
-    };
-    
-	/**
+class Portal;
+
+class DeviceDelegate
+{
+  public:
+	virtual void deviceDidConnect() = 0;
+	virtual void deviceDidDisconnect() = 0;
+
+	virtual ~DeviceDelegate(){};
+};
+
+/**
 	Represents an iOS device detected by usbmuxd. This class
 	can be used to retrieve info and initiate TCP sessions
 	with the iOS device.
 	*/
-    class Device: public std::enable_shared_from_this<Device>
+class Device : public std::enable_shared_from_this<Device>
+{
+  public:
+	std::shared_ptr<Device> getptr()
 	{
-	public:
-        
-        std::shared_ptr<Device> getptr() {
-            return shared_from_this();
-        }
-        
-		/**
+		return shared_from_this();
+	}
+
+	/**
 		Default constructor for the class.
 		*
 		@param device The underlying usbmuxd device.
 		*/
-		explicit Device(const usbmuxd_device_info_t& device);
-		Device(const Device& other);
-		Device & operator=(const Device& rhs);
-        
-		/**
+	explicit Device(const usbmuxd_device_info_t &device);
+	Device(const Device &other);
+	Device &operator=(const Device &rhs);
+
+	/**
 		Returns whether or not the device is connected
 		*
 		@return true if connected, otherwise false.
 		*/
-		bool isConnected() const;
+	bool isConnected() const;
 
-		/**
+	/**
 		Gets the usbmuxd handle for the device. This handle can be
 		used to comminucate directly with the device using libusbmuxd.
 		*
 		@return The usbmuxd handle
 		*/
-		int usbmuxdHandle() const;
+	int usbmuxdHandle() const;
 
-		/**
+	/**
 		Returns the 40 character UUID associated with the device.
 		*
 		@return The devices UUID.
 		*/
-		const std::string & uuid() const;
+	const std::string &uuid() const;
 
-		/**
+	/**
 		Returns the name of the product.
 		*
 		@return The print friendly version of the product name.
 		*/
-		// const std::string & productName() const;
+	// const std::string & productName() const;
 
-		/**
+	/**
 		Returns the product ID. This is used to determine the product name.
 		*
 		@return The 16 bit product ID.
 		*/
-		uint16_t productID() const;
+	uint16_t productID() const;
 
-		int connect(uint16_t port, ChannelDelegate *channelDelegate);
+	int connect(uint16_t port, ChannelDelegate *channelDelegate);
 
-		~Device();
+	~Device();
 
-		typedef std::map<std::string, std::vector<Device*> > DeviceMap;
-        typedef std::vector<std::shared_ptr<Channel> > ChannelsVec;
-        typedef std::shared_ptr<Device> shared_ptr;
+	typedef std::map<std::string, std::vector<Device *>> DeviceMap;
+	typedef std::vector<std::shared_ptr<Channel>> ChannelsVec;
+	typedef std::shared_ptr<Device> shared_ptr;
 
-        void setDelegate(DeviceDelegate *newDelegate)
-        {
-            delegate = newDelegate;
-        }
-        
-	private:
-		
-        DeviceDelegate *delegate = nullptr;
+	void setDelegate(DeviceDelegate *newDelegate)
+	{
+		delegate = newDelegate;
+	}
 
-		//typedef std::map<Device&, std::vector<Channel> > ChannelMap;
-//        typedef std::map<uint16_t, std::string> ProductMap;
-		
-		///Keeps track of all devices associated by their uuid
-		static DeviceMap s_devices;
-		
-        std::unique_ptr<Channel> connectedChannel;
-        
-        /// A list of all the channels for this device
-//        static ChannelsVec s_connectedChannels;
-        
-		///Internal list of string values for products
-//        static ProductMap s_products;
+  private:
+	DeviceDelegate *delegate = nullptr;
 
-		bool _connected;
-		usbmuxd_device_info_t _device;
-		std::string _uuid;
-		// std::string _productName;
+	///Keeps track of all devices associated by their uuid
+	static DeviceMap s_devices;
 
-		//Removes this device from the device list
-		void removeFromDeviceList();
+	std::unique_ptr<Channel> connectedChannel;
 
-		friend class Peertalk;
-		friend std::ostream & operator<<(std::ostream & os, const Device& v);
-	};
+	bool _connected;
+	usbmuxd_device_info_t _device;
+	std::string _uuid;
+
+	//Removes this device from the device list
+	void removeFromDeviceList();
+
+	friend class Portal;
+	friend std::ostream &operator<<(std::ostream &os, const Device &v);
+};
 }
