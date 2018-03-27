@@ -198,6 +198,18 @@ include_directories(
 	${FFMPEG_INCLUDE_DIRS}
 )
 
+if(MSVC)
+
+	# https://stackoverflow.com/q/33290879
+
+	# needed for some MSVC installations
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SAFESEH:NO")
+	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /SAFESEH:NO")
+	set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} /SAFESEH:NO")
+
+endif()
+
+
 target_link_libraries(obs-ios-camera-source 
 	libobs
 	portal
