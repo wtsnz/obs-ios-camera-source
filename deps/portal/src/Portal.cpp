@@ -42,6 +42,21 @@ void pt_usbmuxd_cb(const usbmuxd_event_t *event, void *user_data)
 
 Portal::Portal() : _listening(false)
 {
+    int connectedDeviceCount = 0;
+    usbmuxd_device_info_t *devicelist = NULL;
+    connectedDeviceCount = usbmuxd_get_device_list(&devicelist);
+    
+    if (connectedDeviceCount > 0) {
+        
+        usbmuxd_device_info_t device_info;
+        memset(&device_info, 0, sizeof(usbmuxd_device_info_t));
+        
+        for (int i = 0; i < connectedDeviceCount; i++) {
+            device_info = devicelist[i];
+            addDevice(device_info);
+        }
+    }
+    
 }
 
 int Portal::startListeningForDevices()
@@ -67,6 +82,38 @@ void Portal::stopListeningForDevices()
 		usbmuxd_unsubscribe();
 		_listening = false;
 	}
+}
+
+void Portal::connectAllDevices()
+    {
+        if (_devices.size() < 1) {
+            // No devices to disconnect
+            return;
+        }
+        
+        std::for_each(_devices.begin(), _devices.end(),
+                      [this](std::map<int, Device::shared_ptr>::value_type &deviceMap)
+                      {
+                          deviceMap.second->connect(2345, this);
+                      }
+        );
+        
+    }
+    
+void Portal::disconnectAllDevices()
+{
+    if (_devices.size() < 1) {
+        // No devices to disconnect
+        return;
+    }
+    
+    std::for_each(_devices.begin(), _devices.end(),
+                  [](std::map<int, Device::shared_ptr>::value_type &deviceMap)
+                  {
+                      deviceMap.second->disconnect();
+                  }
+    );
+    
 }
 
 bool Portal::isListening()
@@ -118,5 +165,7 @@ Portal::~Portal()
 	{
 		usbmuxd_unsubscribe();
 	}
+    
+    disconnectAllDevices();
 }
 }

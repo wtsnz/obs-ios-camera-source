@@ -52,7 +52,7 @@ class IOSCameraInput : public portal::PortalDelegate
 	{
 		memset(&frame, 0, sizeof(frame));
 
-		portal.startListeningForDevices();
+		//portal.startListeningForDevices();
 		portal.delegate = this;
 		active = true;
 
@@ -65,6 +65,17 @@ class IOSCameraInput : public portal::PortalDelegate
 		// Free the video decoder.
         ffmpeg_decode_free(video_decoder);
 	}
+
+    void activate() {
+        blog(LOG_INFO, "Activating");
+        portal.startListeningForDevices();
+        portal.connectAllDevices();
+    }
+    
+    void deactivate() {
+        blog(LOG_INFO, "Deactivating");
+        portal.disconnectAllDevices();
+    }
 
 	void portalDeviceDidReceivePacket(std::vector<char> packet)
 	{
@@ -133,16 +144,29 @@ static void DestroyIOSCameraInput(void *data)
 	delete reinterpret_cast<IOSCameraInput *>(data);
 }
 
+static void DeactivateIOSCameraInput(void *data)
+{
+    auto cameraInput =  reinterpret_cast<IOSCameraInput*>(data);
+    cameraInput->deactivate();
+}
+
+static void ActivateIOSCameraInput(void *data)
+{
+    auto cameraInput = reinterpret_cast<IOSCameraInput*>(data);
+    cameraInput->activate();
+}
+
 void RegisterIOSCameraSource()
 {
-
 	obs_source_info info = {};
-	info.id = "ios-camera-source";
-	info.type = OBS_SOURCE_TYPE_INPUT;
-	info.output_flags = OBS_SOURCE_ASYNC_VIDEO;
-	info.get_name = GetIOSCameraInputName;
-	info.create = CreateIOSCameraInput;
-	info.destroy = DestroyIOSCameraInput;
+	info.id              = "ios-camera-source";
+	info.type            = OBS_SOURCE_TYPE_INPUT;
+	info.output_flags    = OBS_SOURCE_ASYNC_VIDEO;
+	info.get_name        = GetIOSCameraInputName;
+	info.create          = CreateIOSCameraInput;
+	info.destroy         = DestroyIOSCameraInput;
+    info.deactivate      = DeactivateIOSCameraInput;
+    info.activate        = ActivateIOSCameraInput;
 	// info.update          = UpdateDShowInput;
 	// info.get_defaults    = GetDShowDefaults;
 	// info.get_properties  = GetDShowProperties;

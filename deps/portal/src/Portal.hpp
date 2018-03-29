@@ -48,6 +48,9 @@ class Portal : public ChannelDelegate, public std::enable_shared_from_this<Porta
     int startListeningForDevices();
     void stopListeningForDevices();
     bool isListening();
+    
+    void disconnectAllDevices();
+    void connectAllDevices();
 
     PortalDelegate *delegate;
 

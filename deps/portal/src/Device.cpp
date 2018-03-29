@@ -84,6 +84,25 @@ int Device::connect(uint16_t port, ChannelDelegate *newChannelDelegate)
 
 	return retval;
 }
+    
+void Device::disconnect()
+{
+    if (isConnected() == false) {
+        return;
+    }
+    
+    connectedChannel->close();
+    connectedChannel = nullptr;
+}
+    
+bool Device::isConnected() const
+{
+    if (connectedChannel == nullptr) {
+        return false;
+    }
+    
+    return true;
+}
 
 void Device::removeFromDeviceList()
 {
@@ -96,6 +115,7 @@ void Device::removeFromDeviceList()
 
 Device::~Device()
 {
+    disconnect();
 	removeFromDeviceList();
 	std::cout << "Removed " << this << " from device list" << std::endl;
 }

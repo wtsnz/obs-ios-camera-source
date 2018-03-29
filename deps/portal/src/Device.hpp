@@ -68,6 +68,8 @@ class Device : public std::enable_shared_from_this<Device>
 		*/
 	bool isConnected() const;
 
+    void disconnect();
+    
 	/**
 		Gets the usbmuxd handle for the device. This handle can be
 		used to comminucate directly with the device using libusbmuxd.

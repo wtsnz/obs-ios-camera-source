@@ -38,6 +38,8 @@ class Channel : public SimpleDataPacketProtocolDelegate
     Channel(int port, int sfd);
     ~Channel();
 
+    void close();
+    
     void simpleDataPacketProtocolDelegateDidProcessPacket(std::vector<char> packet);
 
     void setDelegate(ChannelDelegate *newDelegate)

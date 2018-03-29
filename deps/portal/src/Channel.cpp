@@ -38,6 +38,13 @@ Channel::~Channel()
     printf("%s: Deallocating\n", __func__);
 }
 
+void Channel::close()
+{
+    running = false;
+    WaitForInternalThreadToExit();
+    usbmuxd_disconnect(conn);
+}
+
 /** Returns true if the thread was successfully started, false if there was an error starting the thread */
 bool Channel::StartInternalThread()
 {
@@ -48,7 +55,10 @@ bool Channel::StartInternalThread()
 /** Will not return until the internal thread has exited. */
 void Channel::WaitForInternalThreadToExit()
 {
-    _thread.join();
+    if (_thread.joinable())
+    {
+        _thread.join();
+    }
 }
 
 void Channel::StopInternalThread()
