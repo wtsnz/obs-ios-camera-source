@@ -235,7 +235,6 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode,
 	if (decode->codec->id == AV_CODEC_ID_H264 && obs_avc_keyframe(data, size))
 	{
 		packet.flags |= AV_PKT_FLAG_KEY;
-		printf("Packet is a keyframe\n");
 	}
 
 	if (!decode->frame)
@@ -246,9 +245,8 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode,
 	}
 
 	ret = avcodec_send_packet(decode->decoder, &packet);
-	printf("Return value: %i", ret);
-	//    if (ret == 0)
-	ret = avcodec_receive_frame(decode->decoder, decode->frame);
+    //    if (ret == 0)
+    ret = avcodec_receive_frame(decode->decoder, decode->frame);
 
 	got_frame = (ret == 0);
 

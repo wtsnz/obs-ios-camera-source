@@ -147,7 +147,6 @@ void Portal::removeDevice(const usbmuxd_device_info_t &device)
 
 void Portal::channelDidReceivePacket(std::vector<char> packet)
 {
-	printf("Portal chanel recive\n");
 	if (delegate != nullptr)
 	{
 		delegate->portalDeviceDidReceivePacket(packet);

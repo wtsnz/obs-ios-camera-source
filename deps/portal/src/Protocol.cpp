@@ -41,9 +41,6 @@ SimpleDataPacketProtocol::~SimpleDataPacketProtocol()
 
 int SimpleDataPacketProtocol::processData(char *data, int dataLength)
 {
-
-    printf("%s: Init\n", __func__);
-
     if (this == nullptr)
     {
         printf("For some reason the simple data packet protocol doesn't exist");
@@ -77,8 +74,6 @@ int SimpleDataPacketProtocol::processData(char *data, int dataLength)
             std::vector<char>::const_iterator first = buffer.begin() + sizeof(length);
             std::vector<char>::const_iterator last = buffer.begin() + sizeof(length) + length;
             std::vector<char> newVec(first, last);
-
-            printf("Got packet: %i\n", length);
 
             if (delegate != nullptr)
             {
