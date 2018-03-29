@@ -245,8 +245,8 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode,
 	}
 
 	ret = avcodec_send_packet(decode->decoder, &packet);
-    //    if (ret == 0)
-    ret = avcodec_receive_frame(decode->decoder, decode->frame);
+    if (ret == 0)
+        ret = avcodec_receive_frame(decode->decoder, decode->frame);
 
 	got_frame = (ret == 0);
 
