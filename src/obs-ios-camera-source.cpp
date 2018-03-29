@@ -62,6 +62,8 @@ class IOSCameraInput : public portal::PortalDelegate
 	inline ~IOSCameraInput()
 	{
 		portal.stopListeningForDevices();
+		// Free the video decoder.
+        ffmpeg_decode_free(video_decoder);
 	}
 
 	void portalDeviceDidReceivePacket(std::vector<char> packet)
