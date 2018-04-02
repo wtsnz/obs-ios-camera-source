@@ -171,11 +171,47 @@ set(ENABLE_PROGRAMS false)
 set(obs-ios-camera-source_SOURCES
 	src/obs-ios-camera-plugin.cpp
 	src/obs-ios-camera-source.cpp
-	src/ffmpeg-decode.c)
+	src/ffmpeg-decode.c
+	src/VideoDecoder.cpp
+	src/FFMpegVideoDecoder.cpp)
 
 set(obs-ios-camera-source_HEADERS
 	src/obs-ios-camera-source.h
-	src/ffmpeg-decode.h)
+	src/ffmpeg-decode.h
+	src/VideoDecoder.h
+	src/FFMpegVideoDecoder.h)
+
+if(APPLE)
+
+	message("Linking Video Toolbox")
+
+	find_library(AVFOUNDATION AVFoundation)
+	find_library(COCOA Cocoa)
+	find_library(COREFOUNDATION CoreFoundation)
+	find_library(COREMEDIA CoreMedia)	
+	find_library(COREVIDEO CoreVideo)
+	find_library(COREMEDIAIO CoreMediaIO)
+	find_library(VIDEOTOOLBOX VideoToolbox)
+
+	include_directories(${AVFOUNDATION}
+		${COCOA}
+		${COREFOUNDATION}
+		${COREMEDIA}
+		${COREVIDEO}
+		${COREMEDIAIO}
+		${VIDEOTOOLBOX}
+		${COCOA})
+
+	list(APPEND obs-ios-camera-source_SOURCES
+		src/VideoToolboxVideoDecoder.cpp)
+	
+	list(APPEND obs-ios-camera-source_HEADERS
+		src/VideoToolboxVideoDecoder.h)
+
+	add_definitions(-fobjc-arc)
+
+
+endif()
 
 # --- Platform-independent build settings ---
 add_library(obs-ios-camera-source MODULE 
@@ -289,8 +325,18 @@ endif()
 # -- OS X specific build settings and tasks --
 if(APPLE)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -fvisibility=default")
-
+	set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unused-function -Werror-implicit-function-declaration -Wno-missing-field-initializers ${CMAKE_CXX_FLAGS} -fno-strict-aliasing")
+	set(CMAKE_C_FLAGS "-Wall -Wextra -Wno-unused-function -Werror-implicit-function-declaration -Wno-missing-braces -Wno-missing-field-initializers ${CMAKE_C_FLAGS} -std=gnu99 -fno-strict-aliasing")
+	
 	set_target_properties(obs-ios-camera-source PROPERTIES PREFIX "")
-	target_link_libraries(obs-ios-camera-source "${OBS_FRONTEND_LIB}")
+	target_link_libraries(obs-ios-camera-source "${OBS_FRONTEND_LIB}"
+		${AVFOUNDATION}
+		${COCOA}
+		${COREFOUNDATION}
+		${COREMEDIA}
+		${COREVIDEO}
+		${COREMEDIAIO}
+		${VIDEOTOOLBOX}
+		${COCOA})
 endif()
 # -- End of section --

@@ -68,7 +68,6 @@ void Channel::StopInternalThread()
 
 void Channel::InternalThreadEntry()
 {
-
     while (running)
     {
         const uint32_t numberOfBytesToAskFor = 65536; // (1 << 16); // This is the value in DarkLighting
@@ -82,7 +81,9 @@ void Channel::InternalThreadEntry()
         {
             if (numberOfBytesReceived > 0)
             {
-                protocol.processData((char *)buffer, numberOfBytesReceived);
+                if (running) {
+                    protocol.processData((char *)buffer, numberOfBytesReceived);
+                }
             }
         }
         else

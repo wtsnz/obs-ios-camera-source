@@ -42,6 +42,8 @@ void pt_usbmuxd_cb(const usbmuxd_event_t *event, void *user_data)
 
 Portal::Portal() : _listening(false)
 {
+    // Attempt to connect to any plugged in devices
+    
     int connectedDeviceCount = 0;
     usbmuxd_device_info_t *devicelist = NULL;
     connectedDeviceCount = usbmuxd_get_device_list(&devicelist);
@@ -125,7 +127,6 @@ void Portal::addDevice(const usbmuxd_device_info_t &device)
 {
 	if (_devices.find(device.handle) == _devices.end())
 	{
-
 		Device::shared_ptr sp = Device::shared_ptr(new Device(device));
 		_devices.insert(DeviceMap::value_type(device.handle, sp));
 
@@ -147,7 +148,7 @@ void Portal::removeDevice(const usbmuxd_device_info_t &device)
 
 void Portal::channelDidReceivePacket(std::vector<char> packet)
 {
-	if (delegate != nullptr)
+	if (delegate != NULL)
 	{
 		delegate->portalDeviceDidReceivePacket(packet);
 	}
