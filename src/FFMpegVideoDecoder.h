@@ -20,6 +20,8 @@
 
 #include "VideoDecoder.h"
 #include "ffmpeg-decode.h"
+#include "Queue.hpp"
+#include "Thread.hpp"
 
 class Decoder
 {
@@ -40,7 +42,7 @@ public:
 //    virtual void VideoToolboxDecodedFrame(CVPixelBufferRef aImage, CMVideoFormatDescriptionRef formatDescription) = 0;
 };
 
-class FFMpegVideoDecoder: public VideoDecoder
+class FFMpegVideoDecoder: public VideoDecoder, private Thread
 {
 public:
     FFMpegVideoDecoder();
@@ -53,12 +55,16 @@ public:
     void Flush() override;
     void Drain() override;
     void Shutdown() override;
-        
-//    FFMpegVideoDecoderCallback *mDelegate;
     
     obs_source_t *source;
 
 private:
+    
+    void *run() override;
+    
+    void processPacketItem(PacketItem *packetItem);
+    
+    WorkQueue<PacketItem *> mQueue;
     
     obs_source_frame frame;
     Decoder video_decoder;

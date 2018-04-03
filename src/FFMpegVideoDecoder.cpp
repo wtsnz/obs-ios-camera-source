@@ -1,4 +1,3 @@
-
 /*
  obs-ios-camera-source
  Copyright (C) 2018    Will Townsend <will@townsend.io>
@@ -21,37 +20,48 @@
 
 FFMpegVideoDecoder::FFMpegVideoDecoder()
 {
-    
+    memset(&frame, 0, sizeof(frame));
 }
 
 FFMpegVideoDecoder::~FFMpegVideoDecoder()
 {
+    this->Shutdown();
     // Free the video decoder.
     ffmpeg_decode_free(video_decoder);
 }
 
 void FFMpegVideoDecoder::Init()
 {
-    
+    // Start the thread.
+    this->start();
 }
 
 void FFMpegVideoDecoder::Flush()
 {
-    
+    // Clear the queue
 }
 
 void FFMpegVideoDecoder::Drain()
 {
-    
+    // Drain the queue
 }
 
 void FFMpegVideoDecoder::Shutdown()
 {
-
+    this->join();
 }
 
 void FFMpegVideoDecoder::Input(std::vector<char> packet)
 {
+    // Create a new packet item and enqueue it.
+    PacketItem *item = new PacketItem(packet);
+    this->mQueue.add(item);
+}
+
+void FFMpegVideoDecoder::processPacketItem(PacketItem *packetItem)
+{
+    auto packet = packetItem->getPacket();
+    
     unsigned char *data = (unsigned char *)packet.data();
     long long ts = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     
@@ -83,7 +93,18 @@ void FFMpegVideoDecoder::Input(std::vector<char> packet)
 #endif
         obs_source_output_video(source, &frame);
     }
+}
+
+void *FFMpegVideoDecoder::run() {
     
+    for (int i = 0;; i++) {
+        
+        PacketItem *item = (PacketItem *)mQueue.remove();
+        this->processPacketItem(item);
+        delete item;
+    }
+    
+    return NULL;
 }
 
 

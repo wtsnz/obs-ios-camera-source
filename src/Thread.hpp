@@ -1,6 +1,6 @@
 /*
  obs-ios-camera-source
- Copyright (C) 2018    Will Townsend <will@townsend.io>
+ Copyright (C) 2018 Will Townsend <will@townsend.io>
  
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -16,26 +16,29 @@
  with this program. If not, see <https://www.gnu.org/licenses/>
  */
 
-#ifndef VideoDecoderCallback_h
-#define VideoDecoderCallback_h
+#ifndef Thread_hpp
+#define Thread_hpp
 
-#include <obs.h>
-#include <vector>
+#include <stdio.h>
+#include <thread>
 
-class VideoDecoderCallback {
+class Thread
+{
 public:
-    virtual ~VideoDecoderCallback() {}
+    Thread();
+    virtual ~Thread();
+    
+    void start();
+    void join();
+    
+    std::thread self();
+    
+    virtual void* run() = 0;
+    
+private:
+    
+    std::thread *mThread;
+    bool mRunning;
 };
 
-class VideoDecoder {
-protected:
-    virtual ~VideoDecoder() {};
-public:
-    virtual void Init() = 0;
-    virtual void Input(std::vector<char> packet) = 0;
-    virtual void Flush() = 0;
-    virtual void Drain() = 0;
-    virtual void Shutdown() = 0;
-};
-
-#endif /* VideoDecoderCallback_h */
+#endif /* Thread_hpp */

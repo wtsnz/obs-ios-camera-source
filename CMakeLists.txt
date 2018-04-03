@@ -173,13 +173,16 @@ set(obs-ios-camera-source_SOURCES
 	src/obs-ios-camera-source.cpp
 	src/ffmpeg-decode.c
 	src/VideoDecoder.cpp
-	src/FFMpegVideoDecoder.cpp)
+	src/FFMpegVideoDecoder.cpp
+	src/Thread.cpp)
 
 set(obs-ios-camera-source_HEADERS
 	src/obs-ios-camera-source.h
 	src/ffmpeg-decode.h
 	src/VideoDecoder.h
-	src/FFMpegVideoDecoder.h)
+	src/FFMpegVideoDecoder.h
+	src/Thread.hpp
+	src/Queue.hpp)
 
 if(APPLE)
 

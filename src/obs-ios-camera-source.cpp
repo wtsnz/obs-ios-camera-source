@@ -27,19 +27,17 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 
 #define TEXT_INPUT_NAME obs_module_text("OBSIOSCamera.Title")
 
-
-class IOSCameraInput : public portal::PortalDelegate, public VideoToolboxDecoderCallback
+class IOSCameraInput: public portal::PortalDelegate, public VideoToolboxDecoderCallback
 {
   public:
 	obs_source_t *source;
 	portal::Portal portal;
-//    Decoder video_decoder;
 	bool active = false;
 	obs_source_frame frame;
     
     VideoToolboxDecoder decoder;
     FFMpegVideoDecoder ffDecoder;
-
+    
 	inline IOSCameraInput(obs_source_t *source_, obs_data_t *settings)
 		: source(source_)
 	{
@@ -51,7 +49,8 @@ class IOSCameraInput : public portal::PortalDelegate, public VideoToolboxDecoder
         decoder.mDelegate = this;
         
         ffDecoder.source = source;
-
+        ffDecoder.Init();
+        
         obs_source_set_async_unbuffered(source, true);
         
 		blog(LOG_INFO, "Started listening for devices");
@@ -60,7 +59,6 @@ class IOSCameraInput : public portal::PortalDelegate, public VideoToolboxDecoder
 	inline ~IOSCameraInput()
 	{
 		portal.stopListeningForDevices();
-		
 	}
 
     void activate() {
@@ -76,51 +74,17 @@ class IOSCameraInput : public portal::PortalDelegate, public VideoToolboxDecoder
     
 	void portalDeviceDidReceivePacket(std::vector<char> packet)
 	{
-//        unsigned char *data = (unsigned char *)packet.data();
-//        long long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-//        OnEncodedVideoData(AV_CODEC_ID_H264, data, packet.size(), now);
+//        PacketItem *item = new PacketItem(packet);
+//        this->queue.add(item);
         
-        this->decoder.Input(packet);
-//        this->ffDecoder.Input(packet);
+//        this->ffDecoder.
         
+//        this->decoder.Input(packet);
+        this->ffDecoder.Input(packet);
 	}
-
-//    void OnEncodedVideoData(enum AVCodecID id,
-//                            unsigned char *data, size_t size, long long ts)
-//    {
-//        if (!ffmpeg_decode_valid(video_decoder))
-//        {
-//            if (ffmpeg_decode_init(video_decoder, id) < 0)
-//            {
-//                blog(LOG_WARNING, "Could not initialize video decoder");
-//                return;
-//            }
-//        }
-//
-//        bool got_output;
-//        bool success = ffmpeg_decode_video(video_decoder, data, size, &ts,
-//                                           &frame, &got_output);
-//        if (!success)
-//        {
-//            blog(LOG_WARNING, "Error decoding video");
-//            return;
-//        }
-//
-//        if (got_output)
-//        {
-//            frame.timestamp = (uint64_t)ts * 100;
-//            //if (flip)
-//            //frame.flip = !frame.flip;
-//#if LOG_ENCODED_VIDEO_TS
-//            blog(LOG_DEBUG, "video ts: %llu", frame.timestamp);
-//#endif
-//            obs_source_output_video(source, &frame);
-//        }
-//    }
     
     void VideoToolboxDecodedFrame(CVPixelBufferRef pixelBufferRef, CMVideoFormatDescriptionRef formatDescription)
     {
-        
         CVImageBufferRef     image = pixelBufferRef;
 //        obs_source_frame *frame = frame;
         
@@ -129,8 +93,6 @@ class IOSCameraInput : public portal::PortalDelegate, public VideoToolboxDecoder
         // CMTime target_pts_nano = CMTimeConvertScale(target_pts, NANO_TIMESCALE,
         // kCMTimeRoundingMethod_Default);
         // frame->timestamp = target_pts_nano.value;
-        
-        
         
         if (!this->decoder.update_frame(source, &frame, image, formatDescription)) {
             // Send blank video
