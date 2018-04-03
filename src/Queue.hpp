@@ -67,7 +67,7 @@ public:
         m_queue.push_back(item);
         mConditionVariable.notify_all();
         mMutex.unlock();
-        printf("Added item. item count: %d\n", this->size());
+//        printf("Added item. item count: %d\n", this->size());
     }
     T remove() {
         std::unique_lock<std::mutex> lock (mMutex);
@@ -78,7 +78,7 @@ public:
             T item = m_queue.front();
             m_queue.pop_front();
             lock.unlock();
-            printf("Removed item. item count: %d\n", this->size());
+//            printf("Removed item. item count: %d\n", this->size());
             return item;
         } else {
             lock.unlock();

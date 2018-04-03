@@ -18,6 +18,7 @@
 
 #include <chrono>
 
+#include "obs-ios-camera-source.h"
 #include "VideoDecoder.h"
 #include "ffmpeg-decode.h"
 #include "Queue.hpp"

@@ -81,7 +81,7 @@ void FFMpegVideoDecoder::processPacketItem(PacketItem *packetItem)
                                        &frame, &got_output);
     if (!success)
     {
-        blog(LOG_WARNING, "Error decoding video");
+//        blog(LOG_WARNING, "Error decoding video");
         return;
     }
     
@@ -106,6 +106,13 @@ void *FFMpegVideoDecoder::run() {
         if (item != NULL) {
             this->processPacketItem(item);
             delete item;
+        }
+        
+        // Check queue lengths
+        
+        const int queueSize = mQueue.size();
+        if (queueSize > 25) {
+            blog(LOG_WARNING, "Decoding queue overloaded. %d frames behind. Please use a lower quality setting.", queueSize);
         }
         
     }
