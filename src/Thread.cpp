@@ -18,7 +18,7 @@
 
 #include "Thread.hpp"
 
-Thread::Thread(): mThread(nullptr), mRunning(false) { }
+Thread::Thread(): mThread(nullptr), mRunning(false), mShouldStop(false) { }
 
 Thread::~Thread()
 {
@@ -26,6 +26,7 @@ Thread::~Thread()
         return;
     }
     
+    mShouldStop = true;
     if (mRunning && mThread->joinable()) {
         mThread->join();
     }
@@ -40,10 +41,12 @@ void Thread::start()
         return;
     }
     
+    mShouldStop = false;
+    
     mThread = new std::thread([this]{
         this->run();
     });
-    
+
     mRunning = true;
 }
 
@@ -52,6 +55,8 @@ void Thread::join()
     if (mThread == nullptr) {
         return;
     }
+    
+    mShouldStop = true;
     
     if (mThread->joinable()) {
         mThread->join();

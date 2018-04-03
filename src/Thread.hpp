@@ -35,10 +35,15 @@ public:
     
     virtual void* run() = 0;
     
+    bool shouldStop() {
+        return mShouldStop;
+    }
+    
 private:
     
     std::thread *mThread;
     bool mRunning;
+    bool mShouldStop;
 };
 
 #endif /* Thread_hpp */

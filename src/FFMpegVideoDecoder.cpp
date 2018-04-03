@@ -49,6 +49,7 @@ void FFMpegVideoDecoder::Drain()
 
 void FFMpegVideoDecoder::Shutdown()
 {
+    mQueue.stop();
     this->join();
 }
 
@@ -98,11 +99,15 @@ void FFMpegVideoDecoder::processPacketItem(PacketItem *packetItem)
 
 void *FFMpegVideoDecoder::run() {
     
-    for (int i = 0;; i++) {
+    while (shouldStop() == false) {
         
         PacketItem *item = (PacketItem *)mQueue.remove();
-        this->processPacketItem(item);
-        delete item;
+        
+        if (item != NULL) {
+            this->processPacketItem(item);
+            delete item;
+        }
+        
     }
     
     return NULL;

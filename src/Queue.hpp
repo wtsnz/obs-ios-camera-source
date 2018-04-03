@@ -37,11 +37,27 @@ public:
 
 template <typename T> class WorkQueue
 {
-    std::list<T>   m_queue;
+    // The Queue that will contain the work items
+    std::list<T> m_queue;
+    
+    // The mutext that we'll use to lock access to the queue
     std::mutex mMutex;
+    
+    // The Condition variable that determines when remove() can stop
+    // waiting because there is either a new item in the queue, or
+    // the queue should stop.
     std::condition_variable mConditionVariable;
     
+    // Whether the queue should stop.
+    // This is required becuase there was an deadlock issue where trying to
+    // stop an std::thread that is waiting on a std::condition_variable to
+    // return.
+    // This stackoverflow question explains in more detail
+    // https://stackoverflow.com/q/21757124
+    bool m_shouldStop = false;
+    
 public:
+    
     WorkQueue() {
     }
     ~WorkQueue() {
@@ -54,21 +70,33 @@ public:
         printf("Added item. item count: %d\n", this->size());
     }
     T remove() {
-        std::unique_lock<std::mutex> lck (mMutex);
-        while (m_queue.size() == 0) {
-            mConditionVariable.wait(lck);
+        std::unique_lock<std::mutex> lock (mMutex);
+
+        mConditionVariable.wait(lock, [&](){ return m_shouldStop || !m_queue.empty(); });
+        
+        if (m_queue.size() > 0) {
+            T item = m_queue.front();
+            m_queue.pop_front();
+            lock.unlock();
+            printf("Removed item. item count: %d\n", this->size());
+            return item;
+        } else {
+            lock.unlock();
+            printf("No item to remove. item count: %d\n", this->size());
+            return NULL;
         }
-        T item = m_queue.front();
-        m_queue.pop_front();
-        lck.unlock();
-        printf("Removed item. item count: %d\n", this->size());
-        return item;
+        
     }
     int size() {
         mMutex.lock();
         int size = m_queue.size();
         mMutex.unlock();
         return size;
+    }
+    
+    void stop(){
+        m_shouldStop = true;
+        mConditionVariable.notify_all();
     }
 };
 
