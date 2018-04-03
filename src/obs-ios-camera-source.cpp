@@ -36,21 +36,20 @@ class IOSCameraInput: public portal::PortalDelegate
 	obs_source_frame frame;
     
 //    VideoToolboxDecoder decoder;
-    FFMpegVideoDecoder ffDecoder;
+    FFMpegVideoDecoder decoder;
     
 	inline IOSCameraInput(obs_source_t *source_, obs_data_t *settings)
 		: source(source_)
 	{
+        UNUSED_PARAMETER(settings);
+        
 		memset(&frame, 0, sizeof(frame));
 
 		portal.delegate = this;
 		active = true;
         
-//        decoder.source = source;
-//        decoder.Init();
-        
-        ffDecoder.source = source;
-        ffDecoder.Init();
+        decoder.source = source;
+        decoder.Init();
         
         obs_source_set_async_unbuffered(source, true);
         
@@ -75,8 +74,7 @@ class IOSCameraInput: public portal::PortalDelegate
     
 	void portalDeviceDidReceivePacket(std::vector<char> packet)
 	{
-//        this->decoder.Input(packet);
-        this->ffDecoder.Input(packet);
+        this->decoder.Input(packet);
 	}
     
 };
