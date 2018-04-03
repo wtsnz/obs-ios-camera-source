@@ -22,16 +22,18 @@
 
 #include <VideoToolbox/VideoToolbox.h>
 
+#include "Queue.hpp"
+#include "Thread.hpp"
 #include "VideoDecoder.h"
 
-class VideoToolboxDecoderCallback {
-public:
-    virtual ~VideoToolboxDecoderCallback() {}
-    
-    virtual void VideoToolboxDecodedFrame(CVPixelBufferRef aImage, CMVideoFormatDescriptionRef formatDescription) = 0;
-};
+//class VideoToolboxDecoderCallback {
+//public:
+//    virtual ~VideoToolboxDecoderCallback() {}
+//
+//    virtual void VideoToolboxDecodedFrame(CVPixelBufferRef aImage, CMVideoFormatDescriptionRef formatDescription) = 0;
+//};
 
-class VideoToolboxDecoder: public VideoDecoder
+class VideoToolboxDecoder: public VideoDecoder, private Thread
 {
 public:
     VideoToolboxDecoder();
@@ -44,13 +46,18 @@ public:
     void Drain() override;
     void Shutdown() override;
     
-    void OutputFrame(CVPixelBufferRef aImage);
-    
-    VideoToolboxDecoderCallback *mDelegate;
-    
+    void OutputFrame(CVPixelBufferRef pixelBufferRef);
+        
     bool update_frame(obs_source_t *capture, obs_source_frame *frame, CVImageBufferRef imageBufferRef, CMVideoFormatDescriptionRef formatDesc);
     
+    // The OBS Source to update.
+    obs_source_t *source;
+    
+    
 private:
+    
+    void *run() override; // Thread
+    void processPacketItem(PacketItem *packetItem);
     
     void createDecompressionSession();
     
@@ -62,4 +69,8 @@ private:
     
     std::vector<char> spsData;
     std::vector<char> ppsData;
+    
+    WorkQueue<PacketItem *> mQueue;
+    
+    obs_source_frame frame;
 };

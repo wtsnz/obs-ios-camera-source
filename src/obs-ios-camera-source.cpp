@@ -23,11 +23,11 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <obs-avc.h>
 
 #include "FFMpegVideoDecoder.h"
-#include "VideoToolboxVideoDecoder.h"
+//#include "VideoToolboxVideoDecoder.h"
 
 #define TEXT_INPUT_NAME obs_module_text("OBSIOSCamera.Title")
 
-class IOSCameraInput: public portal::PortalDelegate, public VideoToolboxDecoderCallback
+class IOSCameraInput: public portal::PortalDelegate
 {
   public:
 	obs_source_t *source;
@@ -35,7 +35,7 @@ class IOSCameraInput: public portal::PortalDelegate, public VideoToolboxDecoderC
 	bool active = false;
 	obs_source_frame frame;
     
-    VideoToolboxDecoder decoder;
+//    VideoToolboxDecoder decoder;
     FFMpegVideoDecoder ffDecoder;
     
 	inline IOSCameraInput(obs_source_t *source_, obs_data_t *settings)
@@ -46,7 +46,8 @@ class IOSCameraInput: public portal::PortalDelegate, public VideoToolboxDecoderC
 		portal.delegate = this;
 		active = true;
         
-        decoder.mDelegate = this;
+//        decoder.source = source;
+//        decoder.Init();
         
         ffDecoder.source = source;
         ffDecoder.Init();
@@ -74,36 +75,10 @@ class IOSCameraInput: public portal::PortalDelegate, public VideoToolboxDecoderC
     
 	void portalDeviceDidReceivePacket(std::vector<char> packet)
 	{
-//        PacketItem *item = new PacketItem(packet);
-//        this->queue.add(item);
-        
-//        this->ffDecoder.
-        
 //        this->decoder.Input(packet);
         this->ffDecoder.Input(packet);
 	}
     
-    void VideoToolboxDecodedFrame(CVPixelBufferRef pixelBufferRef, CMVideoFormatDescriptionRef formatDescription)
-    {
-        CVImageBufferRef     image = pixelBufferRef;
-//        obs_source_frame *frame = frame;
-        
-        // CMTime target_pts =
-        // CMSampleBufferGetOutputPresentationTimeStamp(sampleBuffer);
-        // CMTime target_pts_nano = CMTimeConvertScale(target_pts, NANO_TIMESCALE,
-        // kCMTimeRoundingMethod_Default);
-        // frame->timestamp = target_pts_nano.value;
-        
-        if (!this->decoder.update_frame(source, &frame, image, formatDescription)) {
-            // Send blank video
-             obs_source_output_video(source, nullptr);
-             return;
-        }
-        
-        obs_source_output_video(source, &frame);
-        
-        CVPixelBufferUnlockBaseAddress(image, kCVPixelBufferLock_ReadOnly);
-    }
 };
 
 static const char *GetIOSCameraInputName(void *)

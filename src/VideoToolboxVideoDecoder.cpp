@@ -18,17 +18,22 @@
 
 #import "VideoToolboxVideoDecoder.h"
 
+#define NAL_LENGTH_PREFIX_SIZE 4
+
 VideoToolboxDecoder::VideoToolboxDecoder()
 {
     waitingForSps = true;
     waitingForPps = true;
     mSession = NULL;
     mFormat = NULL;
+    
+    memset(&frame, 0, sizeof(frame));
 }
 
 void VideoToolboxDecoder::Init()
 {
-    
+    // Start the thread.
+    this->start();
 }
 
 void VideoToolboxDecoder::Flush()
@@ -43,6 +48,8 @@ void VideoToolboxDecoder::Drain()
 
 void VideoToolboxDecoder::Shutdown()
 {
+    this->join();
+    
     if (mSession != NULL) {
         VTDecompressionSessionInvalidate(mSession);
     }
@@ -50,10 +57,21 @@ void VideoToolboxDecoder::Shutdown()
     mSession = NULL;
 }
 
-#define NAL_LENGTH_PREFIX_SIZE 4
+void *VideoToolboxDecoder::run() {
+    
+    for (int i = 0;; i++) {
+        
+        PacketItem *item = (PacketItem *)mQueue.remove();
+        this->processPacketItem(item);
+        delete item;
+    }
+    
+    return NULL;
+}
 
-void VideoToolboxDecoder::Input(std::vector<char> packet)
+void VideoToolboxDecoder::processPacketItem(PacketItem *packetItem)
 {
+    auto packet = packetItem->getPacket();
     
     blog(LOG_INFO, "Input");
     
@@ -85,7 +103,7 @@ void VideoToolboxDecoder::Input(std::vector<char> packet)
             
             waitingForPps = false;
         }
-            
+        
         if (!waitingForPps && !waitingForSps) {
             
             const uint8_t * const parameterSetPointers[] = { (uint8_t *)spsData.data(), (uint8_t *)ppsData.data() };
@@ -121,7 +139,7 @@ void VideoToolboxDecoder::Input(std::vector<char> packet)
         }
         
     }
-
+    
     // Ensure that
     if (ppsData.size() < 1 || spsData.size() < 1) {
         return;
@@ -145,14 +163,14 @@ void VideoToolboxDecoder::Input(std::vector<char> packet)
         this->createDecompressionSession();
     }
     
-
+    
     
     // Create the sample data for the decoder
     
     uint8_t *data = NULL;
     CMBlockBufferRef blockBuffer = NULL;
     long blockLength = 0;
-
+    
     // type 5 is an IDR frame NALU.  The SPS and PPS NALUs should always be followed by an IDR (or IFrame) NALU, as far as I know
     if (naluType == 5) {
         int offset = 0;
@@ -199,7 +217,7 @@ void VideoToolboxDecoder::Input(std::vector<char> packet)
     
     // now create our sample buffer from the block buffer,
     if (status != noErr) {
-//        NSLog(@"Error creating block buffer: %@", @(status));
+        //        NSLog(@"Error creating block buffer: %@", @(status));
         return;
     }
     
@@ -229,7 +247,7 @@ void VideoToolboxDecoder::Input(std::vector<char> packet)
     
     // set some values of the sample buffer's attachments
     CFArrayRef attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, YES);
-//    CFMutableDictionaryRef dict = (CFMutableDictionaryRef)CFArrayGetValueAtIndex(attachments, 0);
+    //    CFMutableDictionaryRef dict = (CFMutableDictionaryRef)CFArrayGetValueAtIndex(attachments, 0);
     //    CFDictionarySetValue(dict, kCMSampleAttachmentKey_DisplayImmediately, kCFBooleanTrue);
     
     VTDecodeFrameFlags flags = kVTDecodeFrame_1xRealTimePlayback;
@@ -251,13 +269,35 @@ void VideoToolboxDecoder::Input(std::vector<char> packet)
     
 }
 
-void VideoToolboxDecoder::OutputFrame(CVPixelBufferRef aImage)
+
+
+void VideoToolboxDecoder::Input(std::vector<char> packet)
 {
-    if (mDelegate == nullptr) {
+    // Create a new packet item and enqueue it.
+    PacketItem *item = new PacketItem(packet);
+    this->mQueue.add(item);
+}
+
+void VideoToolboxDecoder::OutputFrame(CVPixelBufferRef pixelBufferRef)
+{
+    CVImageBufferRef     image = pixelBufferRef;
+    //        obs_source_frame *frame = frame;
+    
+    // CMTime target_pts =
+    // CMSampleBufferGetOutputPresentationTimeStamp(sampleBuffer);
+    // CMTime target_pts_nano = CMTimeConvertScale(target_pts, NANO_TIMESCALE,
+    // kCMTimeRoundingMethod_Default);
+    // frame->timestamp = target_pts_nano.value;
+    
+    if (!update_frame(source, &frame, image, mFormat)) {
+        // Send blank video
+        obs_source_output_video(source, nullptr);
         return;
     }
     
-    mDelegate->VideoToolboxDecodedFrame(aImage, mFormat);
+    obs_source_output_video(source, &frame);
+    
+    CVPixelBufferUnlockBaseAddress(image, kCVPixelBufferLock_ReadOnly);
 }
 
 static void
@@ -325,7 +365,7 @@ bool VideoToolboxDecoder::update_frame(obs_source_t *capture, obs_source_frame *
         return false;
     }
     
-    FourCharCode    fourcc = CMFormatDescriptionGetMediaSubType(formatDesc);
+//    FourCharCode    fourcc = CMFormatDescriptionGetMediaSubType(formatDesc);
     // video_format    format = format_from_subtype(fourcc);
     CMVideoDimensions dims = CMVideoFormatDescriptionGetDimensions(formatDesc);
     
