@@ -163,29 +163,24 @@ void VideoToolboxDecoder::processPacketItem(PacketItem *packetItem)
         this->createDecompressionSession();
     }
     
-    
-    
     // Create the sample data for the decoder
     
-    uint8_t *data = NULL;
     CMBlockBufferRef blockBuffer = NULL;
     long blockLength = 0;
     
-    // type 5 is an IDR frame NALU.  The SPS and PPS NALUs should always be followed by an IDR (or IFrame) NALU, as far as I know
+    // type 5 is an IDR frame NALU. The SPS and PPS NALUs should always be followed by an IDR (or IFrame) NALU, as far as I know
     if (naluType == 5) {
-        int offset = 0;
+
         blockLength = frameSize;
-        data = (uint8_t *)malloc(blockLength);
-        data = (uint8_t *)memcpy(data, &packet[offset], blockLength);
-        
+
         // replace the start code header on this NALU with its size.
         // AVCC format requires that you do this.
         // htonl converts the unsigned int from host to network byte order
         uint32_t dataLength32 = htonl (blockLength - 4);
-        memcpy(data, &dataLength32, sizeof (uint32_t));
+        memcpy(packet.data(), &dataLength32, sizeof (uint32_t));
         
         // create a block buffer from the IDR NALU
-        status = CMBlockBufferCreateWithMemoryBlock(NULL, data,  // memoryBlock to hold buffered data
+        status = CMBlockBufferCreateWithMemoryBlock(NULL, packet.data(),  // memoryBlock to hold buffered data
                                                     blockLength,  // block length of the mem block in bytes.
                                                     kCFAllocatorNull, NULL,
                                                     0, // offsetToData
@@ -199,14 +194,12 @@ void VideoToolboxDecoder::processPacketItem(PacketItem *packetItem)
         // non-IDR frames do not have an offset due to SPS and PSS, so the approach
         // is similar to the IDR frames just without the offset
         blockLength = frameSize;
-        data = (uint8_t *)malloc(blockLength);
-        data = (uint8_t *)memcpy(data, &packet[0], blockLength);
         
         // again, replace the start header with the size of the NALU
         uint32_t dataLength32 = htonl (blockLength - 4);
-        memcpy (data, &dataLength32, sizeof (uint32_t));
+        memcpy (packet.data(), &dataLength32, sizeof (uint32_t));
         
-        status = CMBlockBufferCreateWithMemoryBlock(NULL, data,  // memoryBlock to hold data. If NULL, block will be alloc when needed
+        status = CMBlockBufferCreateWithMemoryBlock(NULL, packet.data(),  // memoryBlock to hold data. If NULL, block will be alloc when needed
                                                     blockLength,  // overall length of the mem block in bytes
                                                     kCFAllocatorNull, NULL,
                                                     0,     // offsetToData
@@ -259,14 +252,6 @@ void VideoToolboxDecoder::processPacketItem(PacketItem *packetItem)
                                       (void*)now, &flagOut);
     
     CFRelease(sampleBuffer);
-    
-    // free memory to avoid a memory leak, do the same for sps, pps and blockbuffer
-    if (NULL != data)
-    {
-        free (data);
-        data = NULL;
-    }
-    
 }
 
 
