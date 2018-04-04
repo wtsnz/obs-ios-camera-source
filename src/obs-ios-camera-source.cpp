@@ -22,48 +22,43 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <usbmuxd.h>
 #include <obs-avc.h>
 
-#include "ffmpeg-decode.h"
+#include "FFMpegVideoDecoder.h"
+//#include "VideoToolboxVideoDecoder.h"
 
 #define TEXT_INPUT_NAME obs_module_text("OBSIOSCamera.Title")
 
-class Decoder
-{
-	struct ffmpeg_decode decode;
-
-  public:
-	inline Decoder() { memset(&decode, 0, sizeof(decode)); }
-	inline ~Decoder() { ffmpeg_decode_free(&decode); }
-
-	inline operator ffmpeg_decode *() { return &decode; }
-	inline ffmpeg_decode *operator->() { return &decode; }
-};
-
-class IOSCameraInput : public portal::PortalDelegate
+class IOSCameraInput: public portal::PortalDelegate
 {
   public:
 	obs_source_t *source;
 	portal::Portal portal;
-	Decoder video_decoder;
 	bool active = false;
 	obs_source_frame frame;
-
+    
+//    VideoToolboxDecoder decoder;
+    FFMpegVideoDecoder decoder;
+    
 	inline IOSCameraInput(obs_source_t *source_, obs_data_t *settings)
 		: source(source_)
 	{
+        UNUSED_PARAMETER(settings);
+        
 		memset(&frame, 0, sizeof(frame));
 
-		//portal.startListeningForDevices();
 		portal.delegate = this;
 		active = true;
-
+        
+        decoder.source = source;
+        decoder.Init();
+        
+        obs_source_set_async_unbuffered(source, true);
+        
 		blog(LOG_INFO, "Started listening for devices");
 	}
 
 	inline ~IOSCameraInput()
 	{
 		portal.stopListeningForDevices();
-		// Free the video decoder.
-        ffmpeg_decode_free(video_decoder);
 	}
 
     void activate() {
@@ -76,46 +71,12 @@ class IOSCameraInput : public portal::PortalDelegate
         blog(LOG_INFO, "Deactivating");
         portal.disconnectAllDevices();
     }
-
+    
 	void portalDeviceDidReceivePacket(std::vector<char> packet)
 	{
-		unsigned char *data = (unsigned char *)packet.data();
-		long long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-		OnEncodedVideoData(AV_CODEC_ID_H264, data, packet.size(), now);
+        this->decoder.Input(packet);
 	}
-
-	void OnEncodedVideoData(enum AVCodecID id,
-							unsigned char *data, size_t size, long long ts)
-	{
-		if (!ffmpeg_decode_valid(video_decoder))
-		{
-			if (ffmpeg_decode_init(video_decoder, id) < 0)
-			{
-				blog(LOG_WARNING, "Could not initialize video decoder");
-				return;
-			}
-		}
-
-		bool got_output;
-		bool success = ffmpeg_decode_video(video_decoder, data, size, &ts,
-										   &frame, &got_output);
-		if (!success)
-		{
-			blog(LOG_WARNING, "Error decoding video");
-			return;
-		}
-
-		if (got_output)
-		{
-			frame.timestamp = (uint64_t)ts * 100;
-			//if (flip)
-			//frame.flip = !frame.flip;
-#if LOG_ENCODED_VIDEO_TS
-			blog(LOG_DEBUG, "video ts: %llu", frame.timestamp);
-#endif
-			obs_source_output_video(source, &frame);
-		}
-	}
+    
 };
 
 static const char *GetIOSCameraInputName(void *)

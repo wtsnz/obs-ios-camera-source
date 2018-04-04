@@ -75,7 +75,7 @@ int SimpleDataPacketProtocol::processData(char *data, int dataLength)
             std::vector<char>::const_iterator last = buffer.begin() + sizeof(length) + length;
             std::vector<char> newVec(first, last);
 
-            if (delegate != nullptr)
+            if (delegate != NULL)
             {
                 delegate->simpleDataPacketProtocolDelegateDidProcessPacket(newVec);
             }

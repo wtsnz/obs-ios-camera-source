@@ -19,6 +19,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <usbmuxd.h>
 #include <vector>
 #include <map>
+#include <algorithm>
 
 #include "Device.hpp"
 
