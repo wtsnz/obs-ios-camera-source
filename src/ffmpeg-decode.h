@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "obs-ios-camera-source.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,7 +31,9 @@ extern "C" {
 #pragma warning(disable : 4204)
 #endif
 
+#include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
+#include <libavdevice/avdevice.h>
 #include <libavutil/log.h>
 
 #ifdef _MSC_VER

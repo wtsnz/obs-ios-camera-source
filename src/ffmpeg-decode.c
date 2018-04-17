@@ -19,19 +19,78 @@
 #include "obs-ffmpeg-compat.h"
 #include <obs-avc.h>
 
+#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(54, 31, 100)
+#define AV_PIX_FMT_VDTOOL AV_PIX_FMT_VIDEOTOOLBOX
+#else
+#define AV_PIX_FMT_VDTOOL AV_PIX_FMT_VDA_VLD
+#endif
+
+
+static AVCodec *find_hardware_decoder(enum AVCodecID id)
+{
+    
+    av_register_all();
+    avcodec_register_all();
+    avcodec_register_all();
+    avformat_network_init();
+    
+    AVHWAccel *hwa = av_hwaccel_next(NULL);
+    AVCodec *c = NULL;
+    
+    while (hwa) {
+        
+        if (hwa->id == id) {
+            if (hwa->pix_fmt == AV_PIX_FMT_VDTOOL ||
+                hwa->pix_fmt == AV_PIX_FMT_DXVA2_VLD ||
+                hwa->pix_fmt == AV_PIX_FMT_VAAPI_VLD) {
+                
+                blog(LOG_INFO, "Found hardware accelerator: %s", hwa->name);
+
+                av_register_hwaccel(hwa);
+                c = avcodec_find_decoder_by_name(hwa->name);
+                
+                if (c) {
+                    blog(LOG_INFO, "Found hardware decoder: %s", c->long_name);
+                    break;
+                } else {
+                    blog(LOG_INFO, "No hardware decoder for %s", hwa->name);
+                }
+            }
+        }
+        
+        hwa = av_hwaccel_next(hwa);
+    }
+    
+    return c;
+}
+
 int ffmpeg_decode_init(struct ffmpeg_decode *decode, enum AVCodecID id)
 {
 	int ret;
 
-	avcodec_register_all();
-	memset(decode, 0, sizeof(*decode));
+    av_register_all();
+    avdevice_register_all();
+    avcodec_register_all();
+    avformat_network_init();
 
-	decode->codec = avcodec_find_decoder(id);
+    memset(decode, 0, sizeof(*decode));
+
+    // Attempt to find a compatible hardware decoder for the AVCodec
+    decode->codec = find_hardware_decoder(id);
+    
+    if (!decode->codec) {
+        blog(LOG_INFO, "Couldn't find hardware decoder. Using software decoder");
+        // Find the software decoder for the AVCodec
+        decode->codec = avcodec_find_decoder(id);
+    }
+	
 	if (!decode->codec)
 		return -1;
 
+    blog(LOG_INFO, "Using decoder: %s (%s)", decode->codec->long_name, decode->codec->name);
+    
 	decode->decoder = avcodec_alloc_context3(decode->codec);
-
+    
 	ret = avcodec_open2(decode->decoder, decode->codec, NULL);
 	if (ret < 0)
 	{
@@ -229,8 +288,8 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode,
 	packet.data = decode->packet_buffer;
 	packet.size = (int)size;
 	packet.pts = *ts;
-	//    packet.flags |= CODEC_FLAG_TRUNCATED; /* We may send incomplete frames */
-	//    packet.flags |= CODEC_FLAG2_CHUNKS;
+	packet.flags |= CODEC_FLAG_TRUNCATED; /* We may send incomplete frames */
+	packet.flags |= CODEC_FLAG2_CHUNKS;
 
 	if (decode->codec->id == AV_CODEC_ID_H264 && obs_avc_keyframe(data, size))
 	{
