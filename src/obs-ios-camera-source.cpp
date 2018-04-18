@@ -74,7 +74,19 @@ class IOSCameraInput: public portal::PortalDelegate
     
 	void portalDeviceDidReceivePacket(std::vector<char> packet)
 	{
-        this->decoder.Input(packet);
+        try
+        {
+            this->decoder.Input(packet);
+        }
+        catch (...)
+        {
+            // This isn't great, but I haven't been able to figure out what is causing
+            // the exception that happens when
+            //   the phone is plugged in with the app open
+            //   OBS Studio is launched with the iOS Camera plugin ready
+            // This also doesn't happen _all_ the time. Which makes this 'fun'..
+            blog(LOG_INFO, "Exception caught...");
+        }
 	}
     
 };
