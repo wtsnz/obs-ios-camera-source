@@ -48,6 +48,8 @@ typedef struct {
 	uint32_t handle;
 	int product_id;
 	char udid[41];
+    uint32_t connection_speed;
+    char connection_type[256];
 } usbmuxd_device_info_t;
 
 /**

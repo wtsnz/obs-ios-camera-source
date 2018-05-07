@@ -179,6 +179,21 @@ static struct usbmuxd_device_record* device_record_from_plist(plist_t props)
 		plist_get_uint_val(n, &val);
 		dev->location = (uint32_t)val;
 	}
+    
+    n = plist_dict_get_item(props, "ConnectionType");
+    if (n && plist_get_node_type(n) == PLIST_STRING) {
+        plist_get_string_val(n, &strval);
+        if (strval) {
+            strncpy(dev->connection_type, strval, 255);
+            free(strval);
+        }
+    }
+    
+    n = plist_dict_get_item(props, "ConnectionSpeed");
+    if (n && plist_get_node_type(n) == PLIST_UINT) {
+        plist_get_uint_val(n, &val);
+        dev->connection_speed = (uint32_t)val;
+    }
 
 	return dev;
 }
@@ -718,6 +733,11 @@ static int get_next_event(int sfd, usbmuxd_event_cb_t callback, void *user_data)
 			sprintf(devinfo->udid + 32, "%08x", devinfo->handle);
 		}
 
+        memset(devinfo->connection_type, '\0', sizeof(devinfo->connection_type));
+        memcpy(devinfo->connection_type, dev->connection_type, sizeof(devinfo->connection_type));
+        
+        devinfo->connection_speed = dev->connection_speed;
+        
 		collection_add(&devices, devinfo);
 		generate_event(callback, devinfo, UE_DEVICE_ADD, user_data);
 	} else if (hdr.message == MESSAGE_DEVICE_REMOVE) {
@@ -882,6 +902,11 @@ static usbmuxd_device_info_t *device_info_from_device_record(struct usbmuxd_devi
 	if (strcasecmp(devinfo->udid, "ffffffffffffffffffffffffffffffffffffffff") == 0) {
 		sprintf(devinfo->udid + 32, "%08x", devinfo->handle);
 	}
+    
+    memset(devinfo->connection_type, '\0', sizeof(devinfo->connection_type));
+    memcpy(devinfo->connection_type, dev->connection_type, sizeof(devinfo->connection_type));
+    
+    devinfo->connection_speed = dev->connection_speed;
 
 	return devinfo;
 }
@@ -1394,4 +1419,5 @@ USBMUXD_API_MSC int usbmuxd_get_tcp_endpoint(char** host, uint16_t* port)
 	*port = tcp_port;
 	return 0;
 }
+
 
