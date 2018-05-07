@@ -42,7 +42,7 @@ class Portal : public ChannelDelegate, public std::enable_shared_from_this<Porta
   public:
     typedef std::map<int, Device::shared_ptr> DeviceMap;
     
-    Portal(PortalDelegate *delegate, int port);
+    Portal(PortalDelegate *delegate);
     ~Portal();
 
     std::shared_ptr<Portal> getptr()
@@ -54,8 +54,8 @@ class Portal : public ChannelDelegate, public std::enable_shared_from_this<Porta
     void stopListeningForDevices();
     bool isListening();
     
-    void disconnectAllDevices();
-    void connectAllDevices();
+//    void disconnectAllDevices();
+//    void connectAllDevices();
 
 //    void setDevicePort(int port);
 //    int getDevicePort();
@@ -68,19 +68,22 @@ class Portal : public ChannelDelegate, public std::enable_shared_from_this<Porta
     }
     
     PortalDelegate *delegate;
-
+Device::shared_ptr _device;
   private:
     
     bool _listening;
     Portal::DeviceMap _devices;
 
-    Device::shared_ptr _device;
+    
 //    int _devicePort;
     
     
     Portal(const Portal &other);
     Portal &operator=(const Portal &other);
 
+    void removeDisconnectedDevices();
+    void addConnectedDevices();
+    
     void addDevice(const usbmuxd_device_info_t &device);
     void removeDevice(const usbmuxd_device_info_t &device);
 

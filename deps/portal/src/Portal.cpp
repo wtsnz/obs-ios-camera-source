@@ -42,45 +42,33 @@ void pt_usbmuxd_cb(const usbmuxd_event_t *event, void *user_data)
     client->delegate->portalDidUpdateDeviceList(client->_devices);
 }
 
-Portal::Portal(PortalDelegate *delegate, int port) : _listening(false)
+Portal::Portal(PortalDelegate *delegate) : _listening(false)
 {
     this->delegate = delegate;
-//    _devicePort = port;
-    
-    // Attempt to connect to any plugged in devices
     
     libusbmuxd_set_debug_level(10);
-    
-    int connectedDeviceCount = 0;
-    usbmuxd_device_info_t *devicelist = NULL;
-    connectedDeviceCount = usbmuxd_get_device_list(&devicelist);
-    
-    if (connectedDeviceCount > 0) {
-        
-        usbmuxd_device_info_t device_info;
-        memset(&device_info, 0, sizeof(usbmuxd_device_info_t));
-        
-        for (int i = 0; i < connectedDeviceCount; i++) {
-            device_info = devicelist[i];
-            addDevice(device_info);
-        }
-    }
-    
+
+    // Load the device list
+    reloadDeviceList();
 }
     
     void Portal::connectToDevice(Device::shared_ptr device)
     {
         // TODO: Diconnect to previous device?
         if (_device) {
-            
+            printf("%s: Disconnecting from old device \n", __func__);
             _device->disconnect();
+            _device = nullptr;
         }
         
         _device = device;
+        
+        printf("PORTAL (%p): Connecting to device: %s (%s)\n", this, device->getProductId().c_str(), device->uuid().c_str());
+
         device->connect(2345, this);
     }
 
-    void Portal::reloadDeviceList()
+    void Portal::removeDisconnectedDevices()
     {
         // Find removed devices.
         std::list<Device::shared_ptr> devicesToRemove;
@@ -97,8 +85,10 @@ Portal::Portal(PortalDelegate *delegate, int port) : _listening(false)
         std::for_each(devicesToRemove.begin(), devicesToRemove.end(), [this](Device::shared_ptr device) {
             this->removeDevice(device->_device);
         });
-        
-        
+    }
+    
+    void Portal::addConnectedDevices()
+    {
         // Add the currently connected devices
         int connectedDeviceCount = 0;
         usbmuxd_device_info_t *devicelist = NULL;
@@ -114,6 +104,12 @@ Portal::Portal(PortalDelegate *delegate, int port) : _listening(false)
                 addDevice(device_info);
             }
         }
+    }
+    
+    void Portal::reloadDeviceList()
+    {
+        removeDisconnectedDevices();
+        addConnectedDevices();
     }
     
     // BUG: Listening for devices only works when there is one instance of the plugin
@@ -142,44 +138,6 @@ void Portal::stopListeningForDevices()
 	}
 }
 
-void Portal::connectAllDevices()
-{
-    return;
-    if (_devices.size() < 1) {
-        // No devices to disconnect
-        return;
-    }
-    
-    std::for_each(_devices.begin(), _devices.end(),
-                  [this](std::map<int, Device::shared_ptr>::value_type &deviceMap)
-                  {
-//                      deviceMap.second->connect(_devicePort, this);
-                  }
-    );
-    
-}
-    
-void Portal::disconnectAllDevices()
-{
-    if (_devices.size() < 1) {
-        // No devices to disconnect
-        return;
-    }
-    
-    std::for_each(_devices.begin(), _devices.end(),
-                  [this](std::map<int, Device::shared_ptr>::value_type &deviceMap)
-                  {
-//                      if (deviceMap.second->isConnected()) {
-//                          if (deviceMap.second->connectedChannel->getPort() == _devicePort) {
-//                              printf("PORTAL: disconnecting device on port %i: ", _devicePort);
-//                              deviceMap.second->disconnect();
-//                          }
-//                      }
-                  }
-    );
-    
-}
-
 bool Portal::isListening()
 {
 	return _listening;
@@ -187,16 +145,17 @@ bool Portal::isListening()
 
 void Portal::addDevice(const usbmuxd_device_info_t &device)
 {
+    // Filter out network connected devices
+    if (strcmp(device.connection_type, "Network") == 0)
+    {
+        return;
+    }
+    
 	if (_devices.find(device.handle) == _devices.end())
 	{
 		Device::shared_ptr sp = Device::shared_ptr(new Device(device));
 		_devices.insert(DeviceMap::value_type(device.handle, sp));
-        
         printf("PORTAL (%p): Added device: %i (%s)\n", this, device.product_id, device.udid);
-		// Connect to the device
-		// This port is "the" port.
-//        sp->connect(_devicePort, this);
-//        sp->connect(2345, this);
 	}
 }
 
@@ -232,6 +191,6 @@ Portal::~Portal()
 		usbmuxd_unsubscribe();
 	}
     
-    disconnectAllDevices();
+//    disconnectAllDevices();
 }
 }
