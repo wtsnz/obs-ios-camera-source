@@ -27,6 +27,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 
 #define TEXT_INPUT_NAME obs_module_text("OBSIOSCamera.Title")
 
+#define SETTING_DISCONNECT_WHEN_HIDDEN "setting_deactivate_when_not_showing"
+
 class IOSCameraInput: public portal::PortalDelegate
 {
   public:
@@ -34,6 +36,8 @@ class IOSCameraInput: public portal::PortalDelegate
 	portal::Portal portal;
 	bool active = false;
 	obs_source_frame frame;
+    
+    bool disconnectWhenDeactivated = false;
     
 //    VideoToolboxDecoder decoder;
     FFMpegVideoDecoder decoder;
@@ -45,6 +49,10 @@ class IOSCameraInput: public portal::PortalDelegate
         
 		memset(&frame, 0, sizeof(frame));
 
+//        blog(LOG_INFO, "Port %i", port);
+        
+        loadSettings(settings);
+        
 //        portal.delegate = this;
 		active = true;
         
@@ -63,13 +71,24 @@ class IOSCameraInput: public portal::PortalDelegate
 
     void activate() {
         blog(LOG_INFO, "Activating");
-        portal.startListeningForDevices();
-        portal.connectAllDevices();
+        
+        if (disconnectWhenDeactivated) {
+            portal.startListeningForDevices();
+            portal.connectAllDevices();
+        }
+        
     }
     
     void deactivate() {
         blog(LOG_INFO, "Deactivating");
-        portal.disconnectAllDevices();
+        
+        if (disconnectWhenDeactivated) {
+            portal.disconnectAllDevices();
+        }
+    }
+    
+    void loadSettings(obs_data_t *settings) {
+        disconnectWhenDeactivated = obs_data_get_bool(settings, SETTING_DISCONNECT_WHEN_HIDDEN);
     }
     
 	void portalDeviceDidReceivePacket(std::vector<char> packet)
@@ -129,6 +148,31 @@ static void ActivateIOSCameraInput(void *data)
     cameraInput->activate();
 }
 
+static obs_properties_t *GetIOSCameraProperties(void *data)
+{
+    UNUSED_PARAMETER(data);
+    obs_properties_t *ppts = obs_properties_create();
+    
+    obs_properties_add_bool(ppts, SETTING_DISCONNECT_WHEN_HIDDEN, "Disconnect device when this source is hidden");
+    
+    return ppts;
+}
+
+
+static void GetIOSCameraDefaults(obs_data_t *settings)
+{
+    obs_data_set_default_bool(settings, SETTING_DISCONNECT_WHEN_HIDDEN, false);
+}
+
+static void SaveIOSCameraInput(void *data, obs_data_t *settings)
+{
+    IOSCameraInput *input = reinterpret_cast<IOSCameraInput*>(data);
+    
+    blog(LOG_INFO, "SAVE");
+    
+    input->loadSettings(settings);
+}
+
 void RegisterIOSCameraSource()
 {
 	obs_source_info info = {};
@@ -136,12 +180,15 @@ void RegisterIOSCameraSource()
 	info.type            = OBS_SOURCE_TYPE_INPUT;
 	info.output_flags    = OBS_SOURCE_ASYNC_VIDEO;
 	info.get_name        = GetIOSCameraInputName;
-	info.create          = CreateIOSCameraInput;
+	
+    info.create          = CreateIOSCameraInput;
 	info.destroy         = DestroyIOSCameraInput;
+    
     info.deactivate      = DeactivateIOSCameraInput;
     info.activate        = ActivateIOSCameraInput;
-	// info.update          = UpdateDShowInput;
-	// info.get_defaults    = GetDShowDefaults;
-	// info.get_properties  = GetDShowProperties;
+    
+    info.get_defaults    = GetIOSCameraDefaults;
+    info.get_properties  = GetIOSCameraProperties;
+    info.save            = SaveIOSCameraInput;
 	obs_register_source(&info);
 }
