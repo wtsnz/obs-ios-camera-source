@@ -70,6 +70,7 @@ void Channel::InternalThreadEntry()
 {
     while (running)
     {
+          
         const uint32_t numberOfBytesToAskFor = 65536; // (1 << 16); // This is the value in DarkLighting
         uint32_t numberOfBytesReceived = 0;
 
@@ -96,7 +97,7 @@ void Channel::InternalThreadEntry()
 
 void Channel::simpleDataPacketProtocolDelegateDidProcessPacket(std::vector<char> packet)
 {
-    if (this->delegate)
+    if (this->delegate != NULL)
     {
         this->delegate->channelDidReceivePacket(packet);
     }

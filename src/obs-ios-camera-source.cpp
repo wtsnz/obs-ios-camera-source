@@ -39,13 +39,13 @@ class IOSCameraInput: public portal::PortalDelegate
     FFMpegVideoDecoder decoder;
     
 	inline IOSCameraInput(obs_source_t *source_, obs_data_t *settings)
-		: source(source_)
+        : source(source_), portal(this)
 	{
         UNUSED_PARAMETER(settings);
         
 		memset(&frame, 0, sizeof(frame));
 
-		portal.delegate = this;
+//        portal.delegate = this;
 		active = true;
         
         decoder.source = source;

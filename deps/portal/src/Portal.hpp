@@ -38,7 +38,7 @@ class PortalDelegate
 class Portal : public ChannelDelegate, public std::enable_shared_from_this<Portal>
 {
   public:
-    Portal();
+    Portal(PortalDelegate *delegate);
     ~Portal();
 
     std::shared_ptr<Portal> getptr()

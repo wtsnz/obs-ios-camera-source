@@ -40,8 +40,10 @@ void pt_usbmuxd_cb(const usbmuxd_event_t *event, void *user_data)
 	}
 }
 
-Portal::Portal() : _listening(false)
+Portal::Portal(PortalDelegate *delegate) : _listening(false)
 {
+    this->delegate = delegate;
+    
     // Attempt to connect to any plugged in devices
     
     int connectedDeviceCount = 0;

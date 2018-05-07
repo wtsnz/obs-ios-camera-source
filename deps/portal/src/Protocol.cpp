@@ -46,7 +46,7 @@ int SimpleDataPacketProtocol::processData(char *data, int dataLength)
         printf("For some reason the simple data packet protocol doesn't exist");
         return -1;
     }
-
+    
     if (dataLength > 0)
     {
         // Add data recieved to the end of buffer.
@@ -57,44 +57,53 @@ int SimpleDataPacketProtocol::processData(char *data, int dataLength)
     // Ensure that the data inside the buffer is at least as big
     // as the length variable (32 bit int)
     // and then read it out
-    if (buffer.size() < sizeof(length))
+    if (buffer.size() < sizeof(PortalFrame))
     {
         return -1;
     }
     else
     {
-
-        // Grab the length value out
-        memcpy(&length, &buffer[0], sizeof length);
+        // Read the portal frame out
+        PortalFrame frame;
+        
+        memcpy(&frame, &buffer[0], sizeof(PortalFrame));
         length = ntohl(length);
-
-        while (sizeof(length) + length <= buffer.size())
-        {
+        
+        frame.version = ntohl(frame.version);
+        frame.type = ntohl(frame.type);
+        frame.tag = ntohl(frame.tag);
+        frame.payloadSize = ntohl(frame.payloadSize);
+        
+        if (frame.payloadSize == 0) {
+            printf("Payload was 0");
+            buffer.erase(buffer.begin(), buffer.begin() + sizeof(PortalFrame) + frame.payloadSize);
+            return -1;
+        }
+        
+        // Read payload size now..
+        // Check if we've got all the data for the packet
+        
+        if (buffer.size() > (sizeof(PortalFrame) + frame.payloadSize)) {
+            
             // Read length bytes as that is the packet
-            std::vector<char>::const_iterator first = buffer.begin() + sizeof(length);
-            std::vector<char>::const_iterator last = buffer.begin() + sizeof(length) + length;
+            std::vector<char>::const_iterator first = buffer.begin() + sizeof(PortalFrame);
+            std::vector<char>::const_iterator last = buffer.begin() + sizeof(PortalFrame) + frame.payloadSize;
             std::vector<char> newVec(first, last);
-
+            
             if (delegate != NULL)
             {
                 delegate->simpleDataPacketProtocolDelegateDidProcessPacket(newVec);
             }
-
+            
             // Remove the data from buffer
-            buffer.erase(buffer.begin(), buffer.begin() + sizeof(length) + length);
-
-            // Read the next length
-            // Had to add this check to fix an out of bounds access on Windows.
-            if (buffer.size() > 0)
-            {
-                memcpy(&length, &buffer[0], sizeof length);
-                length = ntohl(length);
-            }
-            else
-            {
-                length = 0;
-            }
+            buffer.erase(buffer.begin(), buffer.begin() + sizeof(PortalFrame) + frame.payloadSize);
+            
+        } else {
+            
+            // We haven't got the data for the packet just yet, so wait for next time!
+            return -1;
         }
+        
     }
 
     return 0;
