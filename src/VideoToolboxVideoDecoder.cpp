@@ -73,7 +73,7 @@ void VideoToolboxDecoder::processPacketItem(PacketItem *packetItem)
 {
     auto packet = packetItem->getPacket();
     
-    blog(LOG_INFO, "Input");
+//    blog(LOG_INFO, "Input");
     
     OSStatus status = 0;
     uint32_t frameSize = packet.size();
@@ -239,7 +239,7 @@ void VideoToolboxDecoder::processPacketItem(PacketItem *packetItem)
                                   &sampleBuffer);
     
     // set some values of the sample buffer's attachments
-    CFArrayRef attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, YES);
+//    CFArrayRef attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, YES);
     //    CFMutableDictionaryRef dict = (CFMutableDictionaryRef)CFArrayGetValueAtIndex(attachments, 0);
     //    CFDictionarySetValue(dict, kCMSampleAttachmentKey_DisplayImmediately, kCFBooleanTrue);
     

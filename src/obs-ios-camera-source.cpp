@@ -174,6 +174,8 @@ class IOSCameraInput: public portal::PortalDelegate
 
 static bool refresh_devices(obs_properties_t *props, obs_property_t *p, void *data)
 {
+    UNUSED_PARAMETER(p);
+    
     auto cameraInput =  reinterpret_cast<IOSCameraInput*>(data);
     
     cameraInput->portal.reloadDeviceList();
@@ -195,7 +197,7 @@ static bool refresh_devices(obs_properties_t *props, obs_property_t *p, void *da
     std::for_each(devices.begin(), devices.end(), [dev_list, &index](std::map<int, portal::Device::shared_ptr>::value_type &deviceMap)
                   {
                       // Add the device name to the list
-                      auto name = deviceMap.second->getProductId().c_str();
+//                      auto name = deviceMap.second->getProductId().c_str();
                       auto uuid = deviceMap.second->uuid().c_str();
                       obs_property_list_add_string(dev_list, uuid, uuid);
                       
@@ -215,24 +217,13 @@ static bool refresh_devices(obs_properties_t *props, obs_property_t *p, void *da
 
 static bool reconnect_to_device(obs_properties_t *props, obs_property_t *p, void *data)
 {
+    UNUSED_PARAMETER(props);
+    UNUSED_PARAMETER(p);
+    
     auto cameraInput =  reinterpret_cast<IOSCameraInput* >(data);
-    
-    
-//    auto test = obs_properties_get(props, SETTING_DEVICE_UUID);
-//
-//    obs_prop
-//
-////    obs_property_t *dev_list = obs_properties_get(props, SETTING_DEVICE_UUID);
-//
-//    auto device_uuid = obs_data_get_string((obs_data_t *)props, SETTING_DEVICE_UUID);
-    
-//    auto device_uuid = obs_data_get_string((obs_data_t *)data, SETTING_DEVICE_UUID);
-
-//    auto device_uuid = obs_data_get_string(settings, SETTING_DEVICE_UUID);
-    
-    blog(LOG_INFO, "Loaded Settings: Connecting to device");
-    
     cameraInput->reconnectToDevice();
+    
+    return false;
 }
 
 
