@@ -50,6 +50,8 @@ Portal::Portal(PortalDelegate *delegate) : _listening(false)
 
     // Load the device list
     reloadDeviceList();
+    
+    startListeningForDevices();
 }
     
     void Portal::connectToDevice(Device::shared_ptr device)

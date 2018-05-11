@@ -38,6 +38,8 @@ class IOSCameraInput: public portal::PortalDelegate
 	bool active = false;
 	obs_source_frame frame;
     
+    std::string deviceUUID;
+    
     bool disconnectWhenDeactivated = false;
     
 //    VideoToolboxDecoder decoder;
@@ -51,12 +53,9 @@ class IOSCameraInput: public portal::PortalDelegate
         blog(LOG_INFO, "Creating instance of plugin!");
         
 		memset(&frame, 0, sizeof(frame));
-
-//        blog(LOG_INFO, "Port %i", port);
         
         loadSettings(settings);
         
-//        portal.delegate = this;
 		active = true;
         
         decoder.source = source;
@@ -75,19 +74,19 @@ class IOSCameraInput: public portal::PortalDelegate
     void activate() {
         blog(LOG_INFO, "Activating");
         
-        if (disconnectWhenDeactivated) {
-            portal.startListeningForDevices();
+//        if (disconnectWhenDeactivated) {
+//            portal.startListeningForDevices();
 //            portal.connectAllDevices();
-        }
+//        }
         
     }
     
     void deactivate() {
         blog(LOG_INFO, "Deactivating");
         
-        if (disconnectWhenDeactivated) {
+//        if (disconnectWhenDeactivated) {
 //            portal.disconnectAllDevices();
-        }
+//        }
     }
     
     void loadSettings(obs_data_t *settings) {
@@ -99,7 +98,20 @@ class IOSCameraInput: public portal::PortalDelegate
         connectToDevice(device_uuid);
     }
     
+    void reconnectToDevice()
+    {
+        if (deviceUUID.size() < 1) {
+            return;
+        }
+        
+        connectToDevice(deviceUUID);
+    }
+    
     void connectToDevice(std::string uuid) {
+        
+        deviceUUID = std::string(uuid);
+        
+//        deviceUUID = std::unique_ptr<std::string>(&uuid);
         
         blog(LOG_INFO, "Connecting to device");
         
@@ -152,6 +164,8 @@ class IOSCameraInput: public portal::PortalDelegate
         // Update OBS Settings
 //        source->
         blog(LOG_INFO, "Updated device list");
+        
+        reconnectToDevice();
     }
     
 };
@@ -167,6 +181,13 @@ static bool refresh_devices(obs_properties_t *props, obs_property_t *p, void *da
     
     obs_property_t *dev_list = obs_properties_get(props, SETTING_DEVICE_UUID);
     obs_property_list_clear(dev_list);
+    
+//    obs_property_set_description(dev_list, "Thsi dhsdha djha djsad");
+    obs_property_set_long_description(dev_list, "Thsi dhsdha djha djsad");
+//    EXPORT void obs_property_set_description(obs_property_t *p,
+//                                             const char *description);
+//    EXPORT void obs_property_set_long_description(obs_property_t *p,
+//                                                  const char *long_description);
     
     obs_property_list_add_string(dev_list, "None", "null");
     
@@ -190,6 +211,28 @@ static bool refresh_devices(obs_properties_t *props, obs_property_t *p, void *da
     );
     
     return true;
+}
+
+static bool reconnect_to_device(obs_properties_t *props, obs_property_t *p, void *data)
+{
+    auto cameraInput =  reinterpret_cast<IOSCameraInput* >(data);
+    
+    
+//    auto test = obs_properties_get(props, SETTING_DEVICE_UUID);
+//
+//    obs_prop
+//
+////    obs_property_t *dev_list = obs_properties_get(props, SETTING_DEVICE_UUID);
+//
+//    auto device_uuid = obs_data_get_string((obs_data_t *)props, SETTING_DEVICE_UUID);
+    
+//    auto device_uuid = obs_data_get_string((obs_data_t *)data, SETTING_DEVICE_UUID);
+
+//    auto device_uuid = obs_data_get_string(settings, SETTING_DEVICE_UUID);
+    
+    blog(LOG_INFO, "Loaded Settings: Connecting to device");
+    
+    cameraInput->reconnectToDevice();
 }
 
 
@@ -247,7 +290,7 @@ static obs_properties_t *GetIOSCameraProperties(void *data)
     refresh_devices(ppts, dev_list, data);
     
     obs_properties_add_button(ppts, "setting_refresh_devices", "Refresh Devices", refresh_devices);
-//    obs_properties_add_button(ppts, "setting_button_connect_to_device", "Connect to Device", nil);
+    obs_properties_add_button(ppts, "setting_button_connect_to_device", "Reconnect to Device", reconnect_to_device);
 
 //    obs_property_set_modified_callback(dev_list, properties_selected_device_changed);
     
@@ -272,16 +315,13 @@ static void SaveIOSCameraInput(void *data, obs_data_t *settings)
 static void UpdateIOSCameraInput(void *data, obs_data_t *settings)
 {
     IOSCameraInput *input = reinterpret_cast<IOSCameraInput*>(data);
-    
-    blog(LOG_INFO, "SAVE");
-    
-    auto uuid = obs_data_get_string(settings, SETTING_DEVICE_UUID);
 
+    // Clear the video frame when a setting changes
+    obs_source_output_video(input->source, NULL);
+
+    // Connect to the device
+    auto uuid = obs_data_get_string(settings, SETTING_DEVICE_UUID);
     input->connectToDevice(uuid);
-//    input->loadSettings(settings);
-    
-    // Refresh devices (to update the connection states)
-//    refresh_devices(settings, data);
 }
 
 void RegisterIOSCameraSource()
