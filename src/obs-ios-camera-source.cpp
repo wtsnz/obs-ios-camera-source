@@ -34,6 +34,8 @@ class IOSCameraInput: public portal::PortalDelegate
 {
   public:
 	obs_source_t *source;
+    obs_data_t *settings;
+    
 	portal::Portal portal;
 	bool active = false;
 	obs_source_frame frame;
@@ -46,7 +48,7 @@ class IOSCameraInput: public portal::PortalDelegate
     FFMpegVideoDecoder decoder;
     
 	inline IOSCameraInput(obs_source_t *source_, obs_data_t *settings)
-        : source(source_), portal(this)
+        : source(source_), portal(this), settings(settings)
 	{
         UNUSED_PARAMETER(settings);
         
@@ -92,7 +94,7 @@ class IOSCameraInput: public portal::PortalDelegate
     void loadSettings(obs_data_t *settings) {
         disconnectWhenDeactivated = obs_data_get_bool(settings, SETTING_DISCONNECT_WHEN_HIDDEN);
         auto device_uuid = obs_data_get_string(settings, SETTING_DEVICE_UUID);
-        
+
         blog(LOG_INFO, "Loaded Settings: Connecting to device");
         
         connectToDevice(device_uuid);
@@ -110,8 +112,6 @@ class IOSCameraInput: public portal::PortalDelegate
     void connectToDevice(std::string uuid) {
         
         deviceUUID = std::string(uuid);
-        
-//        deviceUUID = std::unique_ptr<std::string>(&uuid);
         
         blog(LOG_INFO, "Connecting to device");
         
@@ -159,13 +159,30 @@ class IOSCameraInput: public portal::PortalDelegate
         }
 	}
     
-    void portalDidUpdateDeviceList(std::map<int, portal::Device::shared_ptr>)
+    void portalDidUpdateDeviceList(std::map<int, portal::Device::shared_ptr> deviceList)
     {
         // Update OBS Settings
 //        source->
         blog(LOG_INFO, "Updated device list");
         
-        reconnectToDevice();
+        // If there is one device in the list, then we should attempt to connect to it.
+        
+        if (deviceList.size() == 1) {
+            
+            for (const auto& [index, device] : deviceList) {
+                auto uuid = device.get()->uuid();
+                
+                // Set the setting so that the UI in OBS Studio is updated
+                obs_data_set_string(this->settings, SETTING_DEVICE_UUID, uuid.c_str());
+                
+                // Connect to the device
+                connectToDevice(uuid);
+            }
+            
+        } else {
+            reconnectToDevice();
+        }
+        
     }
     
 };
