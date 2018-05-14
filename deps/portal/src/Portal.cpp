@@ -56,7 +56,7 @@ Portal::Portal(PortalDelegate *delegate) : _listening(false)
     
     void Portal::connectToDevice(Device::shared_ptr device)
     {
-        // TODO: Diconnect to previous device?
+        // Disconnect to previous device
         if (_device) {
             printf("%s: Disconnecting from old device \n", __func__);
             _device->disconnect();
@@ -125,7 +125,7 @@ int Portal::startListeningForDevices()
 	}
 
 	_listening = true;
-	printf("%s: Listening for devices \n", __func__);
+//    printf("%s: Listening for devices \n", __func__);
 
 	return 0;
 }

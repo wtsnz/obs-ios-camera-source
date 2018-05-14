@@ -75,20 +75,10 @@ class IOSCameraInput: public portal::PortalDelegate
 
     void activate() {
         blog(LOG_INFO, "Activating");
-        
-//        if (disconnectWhenDeactivated) {
-//            portal.startListeningForDevices();
-//            portal.connectAllDevices();
-//        }
-        
     }
     
     void deactivate() {
         blog(LOG_INFO, "Deactivating");
-        
-//        if (disconnectWhenDeactivated) {
-//            portal.disconnectAllDevices();
-//        }
     }
     
     void loadSettings(obs_data_t *settings) {
@@ -162,11 +152,11 @@ class IOSCameraInput: public portal::PortalDelegate
     void portalDidUpdateDeviceList(std::map<int, portal::Device::shared_ptr> deviceList)
     {
         // Update OBS Settings
-//        source->
         blog(LOG_INFO, "Updated device list");
         
         // If there is one device in the list, then we should attempt to connect to it.
-        
+        // This allows the majority use case (single device) to plugin in a device and it 'just work'.
+        // Multiple devices will need to be configured.
         if (deviceList.size() == 1) {
             
             for (const auto& [index, device] : deviceList) {
@@ -201,20 +191,14 @@ static bool refresh_devices(obs_properties_t *props, obs_property_t *p, void *da
     obs_property_t *dev_list = obs_properties_get(props, SETTING_DEVICE_UUID);
     obs_property_list_clear(dev_list);
     
-//    obs_property_set_description(dev_list, "Thsi dhsdha djha djsad");
-    obs_property_set_long_description(dev_list, "Thsi dhsdha djha djsad");
-//    EXPORT void obs_property_set_description(obs_property_t *p,
-//                                             const char *description);
-//    EXPORT void obs_property_set_long_description(obs_property_t *p,
-//                                                  const char *long_description);
-    
     obs_property_list_add_string(dev_list, "None", "null");
     
     int index = 1;
     std::for_each(devices.begin(), devices.end(), [dev_list, &index](std::map<int, portal::Device::shared_ptr>::value_type &deviceMap)
                   {
-                      // Add the device name to the list
-//                      auto name = deviceMap.second->getProductId().c_str();
+                      // Add the device uuid to the list.
+                      // It would be neat to grab the device name somehow, but that will likely require
+                      // libmobiledevice instead of usbmuxd. Something to look into.
                       auto uuid = deviceMap.second->uuid().c_str();
                       obs_property_list_add_string(dev_list, uuid, uuid);
                       
@@ -242,7 +226,6 @@ static bool reconnect_to_device(obs_properties_t *props, obs_property_t *p, void
     
     return false;
 }
-
 
 #pragma mark - Plugin Callbacks
 
@@ -299,8 +282,6 @@ static obs_properties_t *GetIOSCameraProperties(void *data)
     
     obs_properties_add_button(ppts, "setting_refresh_devices", "Refresh Devices", refresh_devices);
     obs_properties_add_button(ppts, "setting_button_connect_to_device", "Reconnect to Device", reconnect_to_device);
-
-//    obs_property_set_modified_callback(dev_list, properties_selected_device_changed);
     
     return ppts;
 }
