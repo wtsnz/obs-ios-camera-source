@@ -27,7 +27,6 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 
 #define TEXT_INPUT_NAME obs_module_text("OBSIOSCamera.Title")
 
-#define SETTING_DISCONNECT_WHEN_HIDDEN "setting_deactivate_when_not_showing"
 #define SETTING_DEVICE_UUID "setting_device_uuid"
 
 class IOSCameraInput: public portal::PortalDelegate
@@ -42,15 +41,12 @@ class IOSCameraInput: public portal::PortalDelegate
     
     std::string deviceUUID;
     
-    bool disconnectWhenDeactivated = false;
-    
 //    VideoToolboxDecoder decoder;
     FFMpegVideoDecoder decoder;
     
 	inline IOSCameraInput(obs_source_t *source_, obs_data_t *settings)
-        : source(source_), portal(this), settings(settings)
+        : source(source_), settings(settings), portal(this)
 	{
-        UNUSED_PARAMETER(settings);
         
         blog(LOG_INFO, "Creating instance of plugin!");
         
@@ -64,25 +60,24 @@ class IOSCameraInput: public portal::PortalDelegate
         decoder.Init();
         
         obs_source_set_async_unbuffered(source, true);
-        
-		blog(LOG_INFO, "Started listening for devices");
 	}
 
 	inline ~IOSCameraInput()
 	{
-		portal.stopListeningForDevices();
+        
 	}
 
     void activate() {
         blog(LOG_INFO, "Activating");
+        active = true;
     }
     
     void deactivate() {
         blog(LOG_INFO, "Deactivating");
+        active = false;
     }
     
     void loadSettings(obs_data_t *settings) {
-        disconnectWhenDeactivated = obs_data_get_bool(settings, SETTING_DISCONNECT_WHEN_HIDDEN);
         auto device_uuid = obs_data_get_string(settings, SETTING_DEVICE_UUID);
 
         blog(LOG_INFO, "Loaded Settings: Connecting to device");
