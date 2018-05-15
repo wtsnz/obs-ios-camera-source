@@ -27,9 +27,10 @@ namespace portal
 Device::DeviceMap Device::s_devices;
 //Device::ChannelsVec Device::s_connectedChannels;
 
-Device::Device(const usbmuxd_device_info_t &device) : _connected(true),
+Device::Device(const usbmuxd_device_info_t &device) : _connected(false),
 													  _device(device),
-													  _uuid(_device.udid)
+													  _uuid(_device.udid),
+                        _productId(std::to_string(_device.product_id))
 {
 	s_devices[_uuid].push_back(this);
 	std::cout << "Added " << this << " to device list" << std::endl;
@@ -50,7 +51,8 @@ Device &Device::operator=(const Device &rhs)
 	this->_connected = rhs._connected;
 	this->_device = rhs._device;
 	this->_uuid = rhs._uuid;
-
+    this->_productId = rhs._productId;
+    
 	s_devices[_uuid].push_back(this);
 
 	return *this;

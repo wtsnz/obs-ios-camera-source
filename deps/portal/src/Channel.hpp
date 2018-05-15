@@ -46,6 +46,10 @@ class Channel : public SimpleDataPacketProtocolDelegate
     {
         delegate = newDelegate;
     }
+    
+    int getPort() {
+        return port;
+    }
 
   private:
     int port;

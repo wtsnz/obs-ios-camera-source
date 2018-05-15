@@ -20,6 +20,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <list>
 
 #include "Device.hpp"
 
@@ -32,13 +33,16 @@ class PortalDelegate
 {
   public:
     virtual void portalDeviceDidReceivePacket(std::vector<char> packet) = 0;
+    virtual void portalDidUpdateDeviceList(std::map<int, Device::shared_ptr>) = 0;
     virtual ~PortalDelegate(){};
 };
 
 class Portal : public ChannelDelegate, public std::enable_shared_from_this<Portal>
 {
   public:
-    Portal();
+    typedef std::map<int, Device::shared_ptr> DeviceMap;
+    
+    Portal(PortalDelegate *delegate);
     ~Portal();
 
     std::shared_ptr<Portal> getptr()
@@ -50,20 +54,36 @@ class Portal : public ChannelDelegate, public std::enable_shared_from_this<Porta
     void stopListeningForDevices();
     bool isListening();
     
-    void disconnectAllDevices();
-    void connectAllDevices();
+//    void disconnectAllDevices();
+//    void connectAllDevices();
 
+//    void setDevicePort(int port);
+//    int getDevicePort();
+    void connectToDevice(Device::shared_ptr device);
+    
+    void reloadDeviceList();
+    
+    Portal::DeviceMap getDevices() {
+        return _devices;
+    }
+    
     PortalDelegate *delegate;
-
+Device::shared_ptr _device;
   private:
-    typedef std::map<int, Device::shared_ptr> DeviceMap;
-
+    
     bool _listening;
     Portal::DeviceMap _devices;
 
+    
+//    int _devicePort;
+    
+    
     Portal(const Portal &other);
     Portal &operator=(const Portal &other);
 
+    void removeDisconnectedDevices();
+    void addConnectedDevices();
+    
     void addDevice(const usbmuxd_device_info_t &device);
     void removeDevice(const usbmuxd_device_info_t &device);
 

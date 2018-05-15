@@ -111,6 +111,10 @@ class Device : public std::enable_shared_from_this<Device>
 	{
 		delegate = newDelegate;
 	}
+    
+    std::string getProductId() {
+        return _productId;
+    }
 
   private:
 	DeviceDelegate *delegate = nullptr;
@@ -123,6 +127,7 @@ class Device : public std::enable_shared_from_this<Device>
 	bool _connected;
 	usbmuxd_device_info_t _device;
 	std::string _uuid;
+    std::string _productId;
 
 	//Removes this device from the device list
 	void removeFromDeviceList();

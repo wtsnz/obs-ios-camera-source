@@ -17,14 +17,18 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
 #include <obs-module.h>
+#include <obs.hpp>
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("obs-ios-camera-plugin", "en-US")
+
+#define IOS_CAMERA_PLUGIN_VERSION "2.0.0"
 
 extern void RegisterIOSCameraSource();
 
 bool obs_module_load(void)
 {
+    blog(LOG_INFO, "Loading iOS Camera Plugin (version %s)", IOS_CAMERA_PLUGIN_VERSION);
 	RegisterIOSCameraSource();
 	return true;
 }
