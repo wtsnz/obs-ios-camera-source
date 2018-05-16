@@ -3,7 +3,7 @@ set -ex
 
 # OBS Studio deps
 brew update
-brew install ffmpeg
+# brew install ffmpeg
 brew install libav
 
 # We need to make sure that the version of FFMpeg is the same as
@@ -12,8 +12,6 @@ brew install libav
 #brew install ffmpeg # installs version 4.
 if brew ls --versions ffmpeg > /dev/null; then
   brew uninstall ffmpeg
-else
-  # The package is not installed
 fi
 
 brew tap wtsnz/brew-ffmpeg-tap https://github.com/wtsnz/brew-ffmpeg-tap.git
