@@ -6,6 +6,13 @@ brew update
 brew install ffmpeg
 brew install libav
 
+# We need to make sure that the version of FFMpeg is the same as
+# what was used to build OBS Studio. Right now it was 3.4.2, so I created
+# a homebrew tap that points to that version.
+#brew install ffmpeg # installs version 4.
+brew tap wtsnz/brew-ffmpeg-tap https://github.com/wtsnz/brew-ffmpeg-tap.git
+brew install wtsnz/brew-ffmpeg-tap/ffmpeg
+
 # qtwebsockets deps
 # qt latest
 #brew install qt5
