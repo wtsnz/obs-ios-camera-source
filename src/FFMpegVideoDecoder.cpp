@@ -152,6 +152,13 @@ void *FFMpegVideoDecoder::run() {
         const int queueSize = mQueue.size();
         if (queueSize > 25) {
             blog(LOG_WARNING, "Decoding queue overloaded. %d frames behind. Please use a lower quality setting.", queueSize);
+            
+            if (queueSize > 25) {
+                while (mQueue.size() > 5) {
+                    mQueue.remove();
+                }
+            }
+            
         }
         
     }
