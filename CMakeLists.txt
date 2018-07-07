@@ -11,6 +11,10 @@ include(external/FindLibObs.cmake)
 
 find_package(LibObs REQUIRED)
 
+find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil)
+# find_ffmpeg_library(avcodec)
+# find_ffmpeg_library(avutil)
+
 if(WIN32)
 	find_library(WS2_32_LIBRARY ws2_32)
 endif()
@@ -222,7 +226,7 @@ add_library(obs-ios-camera-source MODULE
 	${obs-ios-camera-source_HEADERS})
 
 
-find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil)
+#find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil)
 
 include_directories( 
 	"${LIBOBS_INCLUDE_DIR}/../UI/obs-frontend-api"

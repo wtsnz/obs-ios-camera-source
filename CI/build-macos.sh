@@ -5,6 +5,7 @@ set -ex
 
 mkdir build && cd build
 cmake .. \
+  -DDepsPath=/tmp/obsdeps \
   -DQTDIR=/usr/local/opt/qt \
   -DLIBOBS_INCLUDE_DIR=../../obs-studio/libobs \
   -DLIBOBS_LIB=../../obs-studio/libobs \

@@ -17,5 +17,13 @@ To use this you use the [accompanying iOS app](https://will.townsend.io/products
 
 Binaries for Windows and Mac are available in the [Releases](https://github.com/wtsnz/obs-ios-camera-source/releases) section.
 
+## Building
+
+You can run the CI scripts to build it. They will clone and build OBS Studio prior to building this plugin.
+
+    ./CI/install-dependencies-macos.sh
+    ./CI/build-macos.sh
+    ./CI/package-macos.sh
+
 ## Special thanks
 - The entire [obs-websockets](https://github.com/Palakis/obs-websocket) project for providing a stella example of an obs plugin build pipeline!
