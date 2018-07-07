@@ -51,7 +51,7 @@ public:
     
     void Init() override;
     
-    void Input(std::vector<char> packet) override;
+    void Input(std::vector<char> packet, int type, int tag) override;
     
     void Flush() override;
     void Drain() override;

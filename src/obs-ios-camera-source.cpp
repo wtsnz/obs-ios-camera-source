@@ -127,11 +127,11 @@ class IOSCameraInput: public portal::PortalDelegate
         
     }
     
-	void portalDeviceDidReceivePacket(std::vector<char> packet)
+	void portalDeviceDidReceivePacket(std::vector<char> packet, int type, int tag)
 	{
         try
         {
-            this->decoder.Input(packet);
+            this->decoder.Input(packet, type, tag);
         }
         catch (...)
         {

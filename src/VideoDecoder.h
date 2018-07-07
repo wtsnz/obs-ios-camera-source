@@ -32,7 +32,7 @@ protected:
     virtual ~VideoDecoder() {};
 public:
     virtual void Init() = 0;
-    virtual void Input(std::vector<char> packet) = 0;
+    virtual void Input(std::vector<char> packet, int type, int tag) = 0;
     virtual void Flush() = 0;
     virtual void Drain() = 0;
     virtual void Shutdown() = 0;

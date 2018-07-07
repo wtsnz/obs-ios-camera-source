@@ -53,19 +53,18 @@ void FFMpegVideoDecoder::Shutdown()
     this->join();
 }
 
-void FFMpegVideoDecoder::Input(std::vector<char> packet)
+void FFMpegVideoDecoder::Input(std::vector<char> packet, int type, int tag)
 {
     // Create a new packet item and enqueue it.
-    PacketItem *item = new PacketItem(packet);
+    PacketItem *item = new PacketItem(packet, type, tag);
     this->mQueue.add(item);
+    
+    const int queueSize = mQueue.size();
+    blog(LOG_WARNING, "Decoding queue size. %d frames behind.", queueSize);
 }
 
 void FFMpegVideoDecoder::processPacketItem(PacketItem *packetItem)
 {
-    auto packet = packetItem->getPacket();
-    
-    unsigned char *data = (unsigned char *)packet.data();
-    long long ts = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     
     if (!ffmpeg_decode_valid(video_decoder))
     {

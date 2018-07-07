@@ -256,10 +256,10 @@ void VideoToolboxDecoder::processPacketItem(PacketItem *packetItem)
 
 
 
-void VideoToolboxDecoder::Input(std::vector<char> packet)
+void VideoToolboxDecoder::Input(std::vector<char> packet, int type, int tag)
 {
     // Create a new packet item and enqueue it.
-    PacketItem *item = new PacketItem(packet);
+    PacketItem *item = new PacketItem(packet, type, tag);
     this->mQueue.add(item);
 }
 
