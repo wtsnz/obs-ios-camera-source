@@ -18,10 +18,12 @@
  */
 
 #include "FFMpegVideoDecoder.h"
+#include <util/platform.h>
 
 FFMpegVideoDecoder::FFMpegVideoDecoder()
 {
-    memset(&frame, 0, sizeof(frame));
+    memset(&video_frame, 0, sizeof(video_frame));
+    memset(&audio_frame, 0, sizeof(audio_frame));
 }
 
 FFMpegVideoDecoder::~FFMpegVideoDecoder()
@@ -29,6 +31,7 @@ FFMpegVideoDecoder::~FFMpegVideoDecoder()
     this->Shutdown();
     // Free the video decoder.
     ffmpeg_decode_free(video_decoder);
+    ffmpeg_decode_free(audio_decoder);
 }
 
 void FFMpegVideoDecoder::Init()
@@ -75,25 +78,62 @@ void FFMpegVideoDecoder::processPacketItem(PacketItem *packetItem)
         }
     }
     
-    bool got_output;
-    bool success = ffmpeg_decode_video(video_decoder, data, packet.size(), &ts,
-                                       &frame, &got_output);
-    if (!success)
+    if (!ffmpeg_decode_valid(audio_decoder))
     {
-//        blog(LOG_WARNING, "Error decoding video");
-        return;
+        if (ffmpeg_decode_init(audio_decoder, AV_CODEC_ID_AAC) < 0)
+        {
+            blog(LOG_WARNING, "Could not initialize audio decoder");
+            return;
+        }
     }
     
-    if (got_output && source != NULL)
-    {
-        frame.timestamp = (uint64_t)ts * 100;
-        //if (flip)
-        //frame.flip = !frame.flip;
-#if LOG_ENCODED_VIDEO_TS
-        blog(LOG_DEBUG, "video ts: %llu", frame.timestamp);
-#endif
-        obs_source_output_video(source, &frame);
+    auto packet = packetItem->getPacket();
+    unsigned char *data = (unsigned char *)packet.data();
+    long long ts = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    
+    if (packetItem->getType() == 102) {
+        
+        bool got_output;
+        
+        bool success = ffmpeg_decode_audio(audio_decoder, data, packet.size(), &audio_frame, &got_output);
+        
+        if (!success)
+        {
+            blog(LOG_WARNING, "Error decoding audio");
+            return;
+        }
+        
+        if (got_output && source != NULL)
+        {
+            audio_frame.timestamp = os_gettime_ns() - 100000000; // -100ms
+            obs_source_output_audio(source, &audio_frame);
+        }
+        
     }
+    else if (packetItem->getType() == 101) {
+        
+        bool got_output;
+        bool success = ffmpeg_decode_video(video_decoder, data, packet.size(), &ts,
+                                           &video_frame, &got_output);
+        if (!success)
+        {
+            //        blog(LOG_WARNING, "Error decoding video");
+            return;
+        }
+        
+        if (got_output && source != NULL)
+        {
+//            frame.timestamp = (uint64_t)ts * 100;
+            video_frame.timestamp = os_gettime_ns() - 100000000; // -100ms
+            //if (flip)
+            //frame.flip = !frame.flip;
+#if LOG_ENCODED_VIDEO_TS
+            blog(LOG_DEBUG, "video ts: %llu", video_frame.timestamp);
+#endif
+            obs_source_output_video(source, &video_frame);
+        }
+    }
+
 }
 
 void *FFMpegVideoDecoder::run() {

@@ -313,7 +313,7 @@ void RegisterIOSCameraSource()
 	obs_source_info info = {};
 	info.id              = "ios-camera-source";
 	info.type            = OBS_SOURCE_TYPE_INPUT;
-	info.output_flags    = OBS_SOURCE_ASYNC_VIDEO;
+	info.output_flags    = OBS_SOURCE_ASYNC_VIDEO | OBS_SOURCE_AUDIO;
 	info.get_name        = GetIOSCameraInputName;
 	
     info.create          = CreateIOSCameraInput;
