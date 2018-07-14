@@ -46,7 +46,7 @@ typedef struct _PortalFrame {
 class SimpleDataPacketProtocolDelegate
 {
   public:
-    virtual void simpleDataPacketProtocolDelegateDidProcessPacket(std::vector<char> packet) = 0;
+    virtual void simpleDataPacketProtocolDelegateDidProcessPacket(std::vector<char> packet, int type, int tag) = 0;
     virtual ~SimpleDataPacketProtocolDelegate(){};
 };
 

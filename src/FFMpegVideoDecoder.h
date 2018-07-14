@@ -51,7 +51,7 @@ public:
     
     void Init() override;
     
-    void Input(std::vector<char> packet) override;
+    void Input(std::vector<char> packet, int type, int tag) override;
     
     void Flush() override;
     void Drain() override;
@@ -67,7 +67,10 @@ private:
     
     WorkQueue<PacketItem *> mQueue;
     
-    obs_source_frame frame;
+    obs_source_frame video_frame;
+    obs_source_audio audio_frame;
+    
     Decoder video_decoder;
+    Decoder audio_decoder;
     
 };

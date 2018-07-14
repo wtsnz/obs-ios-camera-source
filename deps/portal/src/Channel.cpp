@@ -95,11 +95,11 @@ void Channel::InternalThreadEntry()
     }
 }
 
-void Channel::simpleDataPacketProtocolDelegateDidProcessPacket(std::vector<char> packet)
+void Channel::simpleDataPacketProtocolDelegateDidProcessPacket(std::vector<char> packet, int type, int tag)
 {
     if (this->delegate != NULL)
     {
-        this->delegate->channelDidReceivePacket(packet);
+        this->delegate->channelDidReceivePacket(packet, type, tag);
     }
 }
 }

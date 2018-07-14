@@ -92,7 +92,7 @@ int SimpleDataPacketProtocol::processData(char *data, int dataLength)
             
             if (delegate != NULL)
             {
-                delegate->simpleDataPacketProtocolDelegateDidProcessPacket(newVec);
+                delegate->simpleDataPacketProtocolDelegateDidProcessPacket(newVec, frame.type, frame.tag);
             }
             
             // Remove the data from buffer

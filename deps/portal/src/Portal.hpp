@@ -32,7 +32,7 @@ namespace portal
 class PortalDelegate
 {
   public:
-    virtual void portalDeviceDidReceivePacket(std::vector<char> packet) = 0;
+    virtual void portalDeviceDidReceivePacket(std::vector<char> packet, int type, int tag) = 0;
     virtual void portalDidUpdateDeviceList(std::map<int, Device::shared_ptr>) = 0;
     virtual ~PortalDelegate(){};
 };
@@ -68,7 +68,7 @@ class Portal : public ChannelDelegate, public std::enable_shared_from_this<Porta
     }
     
     PortalDelegate *delegate;
-Device::shared_ptr _device;
+    Device::shared_ptr _device;
   private:
     
     bool _listening;
@@ -89,7 +89,7 @@ Device::shared_ptr _device;
 
     friend void pt_usbmuxd_cb(const usbmuxd_event_t *event, void *user_data);
 
-    void channelDidReceivePacket(std::vector<char> packet);
+    void channelDidReceivePacket(std::vector<char> packet, int type, int tag);
     void channelDidStop();
 };
 

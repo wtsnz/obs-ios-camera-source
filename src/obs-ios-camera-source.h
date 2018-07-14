@@ -21,8 +21,6 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 
 #include <obs-module.h>
 
-#define OBS_IOS_CAMERA_SOURCE_VERSION "1.0.0"
-
 #define blog(level, msg, ...) blog(level, "[obs-ios-camera-plugin] " msg, ##__VA_ARGS__)
 
 #endif // OBSIOSCAMERASOURCE_H

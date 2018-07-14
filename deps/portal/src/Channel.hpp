@@ -27,7 +27,7 @@ namespace portal
 class ChannelDelegate
 {
   public:
-    virtual void channelDidReceivePacket(std::vector<char> packet) = 0;
+    virtual void channelDidReceivePacket(std::vector<char> packet, int type, int tag) = 0;
     virtual void channelDidStop() = 0;
     virtual ~ChannelDelegate(){};
 };
@@ -40,7 +40,7 @@ class Channel : public SimpleDataPacketProtocolDelegate
 
     void close();
     
-    void simpleDataPacketProtocolDelegateDidProcessPacket(std::vector<char> packet);
+    void simpleDataPacketProtocolDelegateDidProcessPacket(std::vector<char> packet, int type, int tag);
 
     void setDelegate(ChannelDelegate *newDelegate)
     {

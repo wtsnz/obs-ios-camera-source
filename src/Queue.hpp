@@ -26,12 +26,22 @@
 class PacketItem
 {
     std::vector<char> mPacket;
+    int mType;
+    int mTag;
     
 public:
-    PacketItem(std::vector<char> packet): mPacket(packet) { }
+    PacketItem(std::vector<char> packet, int type, int tag): mPacket(packet), mType(type), mTag(tag) { }
     
     std::vector<char> getPacket() {
         return mPacket;
+    }
+    
+    int getType() {
+        return mType;
+    }
+    
+    int getTag() {
+        return mTag;
     }
 };
 
