@@ -82,6 +82,8 @@ static inline enum video_format convert_pixel_format(int f)
 		return VIDEO_FORMAT_BGRA;
 	case AV_PIX_FMT_BGR0:
 		return VIDEO_FORMAT_BGRX;
+    case AV_PIX_FMT_YUVJ420P:
+        return VIDEO_FORMAT_I420;
 	default:;
 	}
 
