@@ -21,6 +21,8 @@ echo "-- Modifying obs-ios-camera-source.so"
 install_name_tool \
 	-change /usr/local/opt/ffmpeg/lib/libavcodec.57.dylib @rpath/libavcodec.57.dylib \
 	-change /usr/local/opt/ffmpeg/lib/libavutil.55.dylib @rpath/libavutil.55.dylib \
+	-change /tmp/obsdeps/bin/libavcodec.57.dylib @rpath/libavcodec.57.dylib \
+	-change /tmp/obsdeps/bin/libavutil.55.dylib @rpath/libavutil.55.dylib \
 	./build/obs-ios-camera-source.so
 
 echo "-- Dependencies for obs-ios-camera-source"
