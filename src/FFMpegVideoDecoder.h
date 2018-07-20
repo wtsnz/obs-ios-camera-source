@@ -39,8 +39,6 @@ public:
 class FFMpegVideoDecoderCallback {
 public:
     virtual ~FFMpegVideoDecoderCallback() {}
-    
-//    virtual void VideoToolboxDecodedFrame(CVPixelBufferRef aImage, CMVideoFormatDescriptionRef formatDescription) = 0;
 };
 
 class FFMpegVideoDecoder: public VideoDecoder, private Thread
@@ -68,9 +66,7 @@ private:
     WorkQueue<PacketItem *> mQueue;
     
     obs_source_frame video_frame;
-    obs_source_audio audio_frame;
     
     Decoder video_decoder;
-    Decoder audio_decoder;
     
 };

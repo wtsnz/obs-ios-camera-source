@@ -23,6 +23,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <obs-avc.h>
 
 #include "FFMpegVideoDecoder.h"
+#include "FFMpegAudioDecoder.h"
 //#include "VideoToolboxVideoDecoder.h"
 
 #define TEXT_INPUT_NAME obs_module_text("OBSIOSCamera.Title")
@@ -42,7 +43,8 @@ class IOSCameraInput: public portal::PortalDelegate
     std::string deviceUUID;
     
 //    VideoToolboxDecoder decoder;
-    FFMpegVideoDecoder decoder;
+    FFMpegVideoDecoder videoDecoder;
+    FFMpegAudioDecoder audioDecoder;
     
 	inline IOSCameraInput(obs_source_t *source_, obs_data_t *settings)
         : source(source_), settings(settings), portal(this)
@@ -56,8 +58,11 @@ class IOSCameraInput: public portal::PortalDelegate
         
 		active = true;
         
-        decoder.source = source;
-        decoder.Init();
+        videoDecoder.source = source;
+        videoDecoder.Init();
+        
+        audioDecoder.source = source;
+        audioDecoder.Init();
         
         obs_source_set_async_unbuffered(source, true);
 	}
@@ -131,7 +136,16 @@ class IOSCameraInput: public portal::PortalDelegate
 	{
         try
         {
-            this->decoder.Input(packet, type, tag);
+            switch (type) {
+                
+                case 101: // Video Packet
+                    this->videoDecoder.Input(packet, type, tag);
+                    break;
+                case 102: // Audio Packet
+                    this->audioDecoder.Input(packet, type, tag);
+                default:
+                    break;
+            }
         }
         catch (...)
         {

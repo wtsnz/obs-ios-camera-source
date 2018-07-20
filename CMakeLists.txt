@@ -178,6 +178,7 @@ set(obs-ios-camera-source_SOURCES
 	src/ffmpeg-decode.c
 	src/VideoDecoder.cpp
 	src/FFMpegVideoDecoder.cpp
+	src/FFMpegAudioDecoder.cpp
 	src/Thread.cpp)
 
 set(obs-ios-camera-source_HEADERS
@@ -185,6 +186,7 @@ set(obs-ios-camera-source_HEADERS
 	src/ffmpeg-decode.h
 	src/VideoDecoder.h
 	src/FFMpegVideoDecoder.h
+	src/FFMpegAudioDecoder.h
 	src/Thread.hpp
 	src/Queue.hpp)
 
