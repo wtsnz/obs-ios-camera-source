@@ -24,28 +24,28 @@
 #include "Queue.hpp"
 #include "Thread.hpp"
 
-class Decoder
+class AudioDecoder
 {
     struct ffmpeg_decode decode;
     
 public:
-    inline Decoder() { memset(&decode, 0, sizeof(decode)); }
-    inline ~Decoder() { ffmpeg_decode_free(&decode); }
+    inline AudioDecoder() { memset(&decode, 0, sizeof(decode)); }
+    inline ~AudioDecoder() { ffmpeg_decode_free(&decode); }
     
     inline operator ffmpeg_decode *() { return &decode; }
     inline ffmpeg_decode *operator->() { return &decode; }
 };
 
-class FFMpegVideoDecoderCallback {
+class FFMpegAudioDecoderCallback {
 public:
-    virtual ~FFMpegVideoDecoderCallback() {}
+    virtual ~FFMpegAudioDecoderCallback() {}
 };
 
-class FFMpegVideoDecoder: public VideoDecoder, private Thread
+class FFMpegAudioDecoder: public VideoDecoder, private Thread
 {
 public:
-    FFMpegVideoDecoder();
-    ~FFMpegVideoDecoder();
+    FFMpegAudioDecoder();
+    ~FFMpegAudioDecoder();
     
     void Init() override;
     
@@ -56,7 +56,7 @@ public:
     void Shutdown() override;
     
     obs_source_t *source;
-
+    
 private:
     
     void *run() override;
@@ -65,8 +65,8 @@ private:
     
     WorkQueue<PacketItem *> mQueue;
     
-    obs_source_frame video_frame;
+    obs_source_audio audio_frame;
     
-    Decoder video_decoder;
+    AudioDecoder audio_decoder;
     
 };
