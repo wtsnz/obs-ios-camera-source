@@ -25,10 +25,10 @@ tar -xf ./osx-deps.tar.gz -C /tmp
 
 # qtwebsockets deps
 # qt latest
-#brew install qt5
+brew install qt5
 
 # qt 5.9.2
-brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/2b121c9a96e58a5da14228630cb71d5bead7137e/Formula/qt.rb
+#brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/2b121c9a96e58a5da14228630cb71d5bead7137e/Formula/qt.rb
 
 #echo "Qt path: $(find /usr/local/Cellar/qt5 -d 1 | tail -n 1)"
 
