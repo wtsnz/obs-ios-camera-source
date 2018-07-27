@@ -22,7 +22,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("obs-ios-camera-plugin", "en-US")
 
-#define IOS_CAMERA_PLUGIN_VERSION "2.2.2"
+#define IOS_CAMERA_PLUGIN_VERSION "2.3.0"
 
 extern void RegisterIOSCameraSource();
 
