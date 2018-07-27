@@ -59,9 +59,6 @@ void FFMpegVideoDecoder::Input(std::vector<char> packet, int type, int tag)
     // Create a new packet item and enqueue it.
     PacketItem *item = new PacketItem(packet, type, tag);
     this->mQueue.add(item);
-    
-    const int queueSize = mQueue.size();
-    blog(LOG_WARNING, "Decoding queue size. %d frames behind.", queueSize);
 }
 
 void FFMpegVideoDecoder::processPacketItem(PacketItem *packetItem)
