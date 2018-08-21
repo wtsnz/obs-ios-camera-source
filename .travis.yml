@@ -21,4 +21,9 @@ deploy:
   on:
     repo: wtsnz/obs-ios-camera-source
     tags: true
-    
+addons:
+  artifacts:
+    debug: true
+    paths:
+    - $(ls release/* | tr "\n" ":")
+
