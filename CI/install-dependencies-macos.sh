@@ -36,6 +36,10 @@ done
 # Installs a LaunchDaemon under /Library/LaunchDaemons/fr.whitebox.packages.build.dispatcher.plist
 # =!= NOTICE =!=
 
-echo "[obs-ios-camera-plugin] Installing Packaging app (might require password due to 'sudo').."
-curl -o './Packages.pkg' --retry-connrefused -s --retry-delay 1 'https://s3-us-west-2.amazonaws.com/obs-nightly/Packages.pkg'
-sudo installer -pkg ./Packages.pkg -target /
+HAS_PACKAGES=$(type packagesbuild 2>/dev/null)
+
+if [ "${HAS_PACKAGES}" = "" ]; then
+    echo "[obs-ios-camera-plugin] Installing Packaging app (might require password due to 'sudo').."
+    curl -o './Packages.pkg' --retry-connrefused -s --retry-delay 1 'https://s3-us-west-2.amazonaws.com/obs-nightly/Packages.pkg'
+    sudo installer -pkg ./Packages.pkg -target /
+fi 
