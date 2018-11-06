@@ -2,8 +2,14 @@
 
 set -e
 
-echo "-- Preparing package build"
-export QT_CELLAR_PREFIX="$(find /usr/local/Cellar/qt -d 1 | tail -n 1)"
+OSTYPE=$(uname)
+
+if [ "${OSTYPE}" != "Darwin" ]; then
+    echo "[obs-ios-camera-plugin - Error] macOS package script can be run on Darwin-type OS only."
+    exit 1
+fi
+
+echo "[obs-ios-camera-plugin] Preparing package build"
 
 export GIT_HASH=$(git rev-parse --short HEAD)
 

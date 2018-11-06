@@ -22,8 +22,10 @@ Binaries for Windows and Mac are available in the [Releases](https://github.com/
 You can run the CI scripts to build it. They will clone and build OBS Studio prior to building this plugin.
 
     ./CI/install-dependencies-macos.sh
+    ./CI/install-build-obs-macos.sh
     ./CI/build-macos.sh
     ./CI/package-macos.sh
+
 
 ## Special thanks
 - The entire [obs-websockets](https://github.com/Palakis/obs-websocket) project for providing a stella example of an obs plugin build pipeline!
