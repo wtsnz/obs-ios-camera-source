@@ -31,6 +31,18 @@ for DEPENDENCY in ${BREW_DEPENDENCIES}; do
     fi
 done
 
+# =!= NOTICE =!=
+# When building QT5 from sources on macOS 10.13+, use local qt5 formula:
+# brew install ./CI/macos/qt.rb
+# Pouring from the bottle is much quicker though, so use bottle for now.
+# =!= NOTICE =!=
+
+brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/9a70413d137839de0054571e5f85fd07ee400955/Formula/qt.rb
+
+# Pin this version of QT5 to avoid `brew upgrade`
+# upgrading it to incompatible version
+brew pin qt
+
 # Fetch and install Packages app
 # =!= NOTICE =!=
 # Installs a LaunchDaemon under /Library/LaunchDaemons/fr.whitebox.packages.build.dispatcher.plist
