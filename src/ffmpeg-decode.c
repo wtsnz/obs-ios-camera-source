@@ -42,6 +42,8 @@ int ffmpeg_decode_init(struct ffmpeg_decode *decode, enum AVCodecID id)
     if (decode->codec->capabilities & CODEC_CAP_TRUNC)
         decode->decoder->flags |= CODEC_FLAG_TRUNC;
 
+    decode->decoder->flags2 = AV_CODEC_FLAG2_CHUNKS;
+
     return 0;
 }
 
