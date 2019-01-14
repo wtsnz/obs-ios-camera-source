@@ -1,58 +1,57 @@
 #!/bin/sh
-set -ex
+
+OSTYPE=$(uname)
+
+if [ "${OSTYPE}" != "Darwin" ]; then
+    echo "[obs-ios-camera-plugin - Error] macOS install dependencies script can be run on Darwin-type OS only."
+    exit 1
+fi
+
+HAS_BREW=$(type brew 2>/dev/null)
+
+if [ "${HAS_BREW}" = "" ]; then
+    echo "[obs-ios-camera-plugin - Error] Please install Homebrew (https://www.brew.sh/) to build obs-ios-camera-plugin on macOS."
+    exit 1
+fi
 
 # OBS Studio deps
-brew update
-# brew install ffmpeg
-brew install libav
+echo "[obs-ios-camera-plugin] Updating Homebrew.."
+brew update >/dev/null
+echo "[obs-ios-camera-plugin] Checking installed Homebrew formulas.."
+BREW_PACKAGES=$(brew list)
+BREW_DEPENDENCIES="ffmpeg libav cmake"
 
-# We need to make sure that the version of FFMpeg is the same as
-# what was used to build OBS Studio. Right now it was 3.4.2, so I created
-# a homebrew tap that points to that version.
-#brew install ffmpeg # installs version 4.
-#if brew ls --versions ffmpeg > /dev/null; then
-#  brew uninstall ffmpeg
-#fi
+for DEPENDENCY in ${BREW_DEPENDENCIES}; do
+    if echo "${BREW_PACKAGES}" | grep -q "^${DEPENDENCY}\$"; then
+        echo "[obs-ios-camera-plugin] Upgrading OBS-Studio dependency '${DEPENDENCY}'.."
+        brew upgrade ${DEPENDENCY} 2>/dev/null
+    else
+        echo "[obs-ios-camera-plugin] Installing OBS-Studio dependency '${DEPENDENCY}'.."
+        brew install ${DEPENDENCY} 2>/dev/null
+    fi
+done
 
+# =!= NOTICE =!=
+# When building QT5 from sources on macOS 10.13+, use local qt5 formula:
+# brew install ./CI/macos/qt.rb
+# Pouring from the bottle is much quicker though, so use bottle for now.
+# =!= NOTICE =!=
 
-# Fetch and untar prebuilt OBS deps that are compatible with older versions of OSX
-echo "Downloading OBS deps"
+brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/9a70413d137839de0054571e5f85fd07ee400955/Formula/qt.rb
 
-wget --quiet --retry-connrefused --waitretry=1 https://obs-nightly.s3.amazonaws.com/osx-deps-2018-08-09.tar.gz
-tar -xf ./osx-deps-2018-08-09.tar.gz -C /tmp
+# Pin this version of QT5 to avoid `brew upgrade`
+# upgrading it to incompatible version
+brew pin qt
 
-#brew tap wtsnz/brew-ffmpeg-tap https://github.com/wtsnz/brew-ffmpeg-tap.git
-#brew install wtsnz/brew-ffmpeg-tap/ffmpeg
+# Fetch and install Packages app
+# =!= NOTICE =!=
+# Installs a LaunchDaemon under /Library/LaunchDaemons/fr.whitebox.packages.build.dispatcher.plist
+# =!= NOTICE =!=
 
-# qtwebsockets deps
-# qt latest
-brew install qt5
+HAS_PACKAGES=$(type packagesbuild 2>/dev/null)
 
-# qt 5.9.2
-#brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/2b121c9a96e58a5da14228630cb71d5bead7137e/Formula/qt.rb
-
-#echo "Qt path: $(find /usr/local/Cellar/qt5 -d 1 | tail -n 1)"
-
-# Build obs-studio
-cd ..
-git clone https://github.com/obsproject/obs-studio
-cd obs-studio
-OBSLatestTag=$(git describe --tags --abbrev=0)
-git checkout $OBSLatestTag
-mkdir build && cd build
-cmake .. \
-  -DDepsPath=/tmp/obsdeps \
-  -DDISABLE_PLUGINS=true \
-  -DCMAKE_PREFIX_PATH=/usr/local/opt/qt/lib/cmake \
-&& make -j4
-
-# Packages app
-cd ..
-# curl -L -O  http://s.sudre.free.fr/Software/files/Packages.dmg -f --retry 5 -C -
-# hdiutil attach ./Packages.dmg
-# sudo installer -pkg /Volumes/Packages\ 1.2.3/packages/Packages.pkg -target /
-
-
-# Packages app
-wget --quiet --retry-connrefused --waitretry=1 https://s3-us-west-2.amazonaws.com/obs-nightly/Packages.pkg
-sudo installer -pkg ./Packages.pkg -target /
+if [ "${HAS_PACKAGES}" = "" ]; then
+    echo "[obs-ios-camera-plugin] Installing Packaging app (might require password due to 'sudo').."
+    curl -o './Packages.pkg' --retry-connrefused -s --retry-delay 1 'https://s3-us-west-2.amazonaws.com/obs-nightly/Packages.pkg'
+    sudo installer -pkg ./Packages.pkg -target /
+fi 
