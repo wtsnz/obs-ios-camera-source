@@ -63,6 +63,7 @@ void FFMpegAudioDecoder::Input(std::vector<char> packet, int type, int tag)
 
 void FFMpegAudioDecoder::processPacketItem(PacketItem *packetItem)
 {
+    uint64_t cur_time = os_gettime_ns();
 
     if (!ffmpeg_decode_valid(audio_decoder))
     {
@@ -75,7 +76,6 @@ void FFMpegAudioDecoder::processPacketItem(PacketItem *packetItem)
 
     auto packet = packetItem->getPacket();
     unsigned char *data = (unsigned char *)packet.data();
-    long long ts = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
     if (packetItem->getType() == 102) {
 
@@ -91,7 +91,7 @@ void FFMpegAudioDecoder::processPacketItem(PacketItem *packetItem)
 
         if (got_output && source != NULL)
         {
-            audio_frame.timestamp = os_gettime_ns() - 100000000; // -100ms
+            audio_frame.timestamp = cur_time;
             obs_source_output_audio(source, &audio_frame);
         }
     }

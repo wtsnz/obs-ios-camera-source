@@ -62,6 +62,8 @@ void FFMpegVideoDecoder::Input(std::vector<char> packet, int type, int tag)
 
 void FFMpegVideoDecoder::processPacketItem(PacketItem *packetItem)
 {
+    uint64_t cur_time = os_gettime_ns();
+
     if (!ffmpeg_decode_valid(video_decoder))
     {
         if (ffmpeg_decode_init(video_decoder, AV_CODEC_ID_H264) < 0)
@@ -88,13 +90,7 @@ void FFMpegVideoDecoder::processPacketItem(PacketItem *packetItem)
 
         if (got_output && source != NULL)
         {
-            //            frame.timestamp = (uint64_t)ts * 100;
-            video_frame.timestamp = os_gettime_ns() - 100000000; // -100ms
-            //if (flip)
-            //frame.flip = !frame.flip;
-#if LOG_ENCODED_VIDEO_TS
-            blog(LOG_DEBUG, "video ts: %llu", video_frame.timestamp);
-#endif
+            video_frame.timestamp = cur_time;
             obs_source_output_video(source, &video_frame);
         }
     }
