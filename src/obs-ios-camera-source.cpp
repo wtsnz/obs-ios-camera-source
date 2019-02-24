@@ -158,9 +158,16 @@ public:
         // Update OBS Settings
         blog(LOG_INFO, "Updated device list");
 
-        // If there is one device in the list, then we should attempt to connect to it.
-        // This allows the majority use case (single device) to plugin in a device and it 'just work'.
-        // Multiple devices will need to be configured.
+        /// If there is one device in the list, then we should attempt to connect to it.
+        /// I would guess that this is the main use case - one device, and it's good to
+        /// attempt to automatically connect in this case, and 'just work'.
+        ///
+        /// If there are multiple devices, then we can't just connect to all devices.
+        /// We cannot currently detect if a device is connected to another instance of the
+        /// plugin, so it's not safe to attempt to connect to any devices automatically
+        /// as we could be connecting to a device that is currently connected elsewhere.
+        /// Due to this, if there are multiple devices, we won't do anything and will let
+        /// the user configure the instance of the plugin.
         if (deviceList.size() == 1) {
 
             for (const auto& [index, device] : deviceList) {
@@ -174,7 +181,7 @@ public:
             }
 
         } else {
-            reconnectToDevice();
+            // User will have to configure due to more than one device
         }
     }
 };
