@@ -294,11 +294,8 @@ static void GetIOSCameraDefaults(obs_data_t *settings)
 
 static void SaveIOSCameraInput(void *data, obs_data_t *settings)
 {
-    IOSCameraInput *input = reinterpret_cast<IOSCameraInput*>(data);
-
-    blog(LOG_INFO, "SAVE");
-
-    input->loadSettings(settings);
+    UNUSED_PARAMETER(data);
+    UNUSED_PARAMETER(settings);
 }
 
 static void UpdateIOSCameraInput(void *data, obs_data_t *settings)
