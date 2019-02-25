@@ -128,7 +128,7 @@ public:
             auto _uuid = deviceMap.second->uuid();
 
             if (_uuid.compare(uuid) == 0) {
-                printf("comparing \n%s\n%s\n", _uuid.c_str(), uuid.c_str());
+                blog(LOG_DEBUG, "comparing \n%s\n%s\n", _uuid.c_str(), uuid.c_str());
                 portal.connectToDevice(deviceMap.second);
             }
 
@@ -182,15 +182,23 @@ public:
             for (const auto& [index, device] : deviceList) {
                 auto uuid = device.get()->uuid();
 
-                // Set the setting so that the UI in OBS Studio is updated
-                obs_data_set_string(this->settings, SETTING_DEVICE_UUID, uuid.c_str());
+                auto isFirstTimeConnectingToDevice = deviceUUID.size() == 0;
+                auto isDeviceConnected = device.get()->isConnected();
+                auto isThisDeviceTheSameAsThePreviouslyConnectedDevice = deviceUUID.compare(uuid) == 0;
 
-                // Connect to the device
-                connectToDevice(uuid);
+                if (isFirstTimeConnectingToDevice || (isThisDeviceTheSameAsThePreviouslyConnectedDevice && !isDeviceConnected)) {
+
+                    // Set the setting so that the UI in OBS Studio is updated
+                    obs_data_set_string(this->settings, SETTING_DEVICE_UUID, uuid.c_str());
+
+                    // Connect to the device
+                    connectToDevice(uuid);
+                }
             }
 
         } else {
-            // User will have to configure due to more than one device
+            // User will have to configure the plugin manually when more than one device is plugged in
+            // due to the fact that multiple instances of the plugin can't subscribe to device events...
         }
     }
 };
