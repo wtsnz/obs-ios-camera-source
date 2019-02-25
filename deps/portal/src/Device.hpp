@@ -22,6 +22,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <iostream>
 #include <usbmuxd.h>
 
+#include "logging.h"
 #include "Protocol.hpp"
 #include "Channel.hpp"
 
@@ -99,7 +100,7 @@ class Device : public std::enable_shared_from_this<Device>
 		*/
 	uint16_t productID() const;
 
-	int connect(uint16_t port, ChannelDelegate *channelDelegate);
+	int connect(uint16_t port, std::shared_ptr<ChannelDelegate> channelDelegate);
 
 	~Device();
 
@@ -122,7 +123,7 @@ class Device : public std::enable_shared_from_this<Device>
 	///Keeps track of all devices associated by their uuid
 	static DeviceMap s_devices;
 
-	std::unique_ptr<Channel> connectedChannel;
+	std::shared_ptr<Channel> connectedChannel;
 
 	bool _connected;
 	usbmuxd_device_info_t _device;

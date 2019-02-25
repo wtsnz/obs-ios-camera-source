@@ -36,19 +36,30 @@ public:
     obs_source_t *source;
     obs_data_t *settings;
 
-    portal::Portal portal;
+    std::shared_ptr<portal::Portal> sharedPortal;
+    portal::Portal *portal;
+
     bool active = false;
     obs_source_frame frame;
 
     std::string deviceUUID;
 
     //    VideoToolboxDecoder decoder;
-    FFMpegVideoDecoder videoDecoder;
-    FFMpegAudioDecoder audioDecoder;
+    FFMpegVideoDecoder *videoDecoder;
+    FFMpegAudioDecoder *audioDecoder;
 
-    inline IOSCameraInput(obs_source_t *source_, obs_data_t *settings)
-    : source(source_), settings(settings), portal(this)
+    IOSCameraInput(obs_source_t *source_, obs_data_t *settings)
+    : source(source_), settings(settings)
     {
+
+//        auto p = std::make_shared<portal::Portal>();
+//        this->portal = p;
+//        portal.make_shared();
+        portal = new portal::Portal(this);
+
+        sharedPortal = std::shared_ptr<portal::Portal>(portal);
+
+//        portal = std::make_shared<portal::Portal>();
 
         blog(LOG_INFO, "Creating instance of plugin!");
 
@@ -58,18 +69,23 @@ public:
 
         active = true;
 
-        videoDecoder.source = source;
-        videoDecoder.Init();
+        videoDecoder = new FFMpegVideoDecoder();
+        audioDecoder = new FFMpegAudioDecoder();
 
-        audioDecoder.source = source;
-        audioDecoder.Init();
+        videoDecoder->source = source;
+        videoDecoder->Init();
+
+        audioDecoder->source = source;
+        audioDecoder->Init();
 
         obs_source_set_async_unbuffered(source, true);
     }
 
     inline ~IOSCameraInput()
     {
-
+//        delete portal;
+        delete videoDecoder;
+        delete audioDecoder;
     }
 
     void activate() {
@@ -105,13 +121,13 @@ public:
 
         blog(LOG_INFO, "Connecting to device");
 
-        if (portal._device) {
-            portal._device->disconnect();
-            portal._device = nullptr;
+        if (portal->_device) {
+            portal->_device->disconnect();
+            portal->_device = nullptr;
         }
 
         // Find device
-        auto devices = portal.getDevices();
+        auto devices = portal->getDevices();
 
         int index = 0;
         std::for_each(devices.begin(), devices.end(), [this, uuid, &index](std::map<int, portal::Device::shared_ptr>::value_type &deviceMap) {
@@ -120,7 +136,7 @@ public:
 
             if (_uuid.compare(uuid) == 0) {
                 printf("comparing \n%s\n%s\n", _uuid.c_str(), uuid.c_str());
-                portal.connectToDevice(deviceMap.second);
+                portal->connectToDevice(deviceMap.second);
             }
 
             index++;
@@ -134,10 +150,10 @@ public:
             switch (type) {
 
                 case 101: // Video Packet
-                    this->videoDecoder.Input(packet, type, tag);
+                    this->videoDecoder->Input(packet, type, tag);
                     break;
                 case 102: // Audio Packet
-                    this->audioDecoder.Input(packet, type, tag);
+                    this->audioDecoder->Input(packet, type, tag);
                 default:
                     break;
             }
@@ -194,8 +210,8 @@ static bool refresh_devices(obs_properties_t *props, obs_property_t *p, void *da
 
     auto cameraInput =  reinterpret_cast<IOSCameraInput*>(data);
 
-    cameraInput->portal.reloadDeviceList();
-    auto devices = cameraInput->portal.getDevices();
+    cameraInput->portal->reloadDeviceList();
+    auto devices = cameraInput->portal->getDevices();
 
     obs_property_t *dev_list = obs_properties_get(props, SETTING_DEVICE_UUID);
     obs_property_list_clear(dev_list);

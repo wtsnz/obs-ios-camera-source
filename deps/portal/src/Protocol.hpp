@@ -21,6 +21,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 
 #include <vector>
 
+#include "logging.h"
+
 namespace portal
 {
 
@@ -50,23 +52,28 @@ class SimpleDataPacketProtocolDelegate
     virtual ~SimpleDataPacketProtocolDelegate(){};
 };
 
-class SimpleDataPacketProtocol
+    class SimpleDataPacketProtocol: public std::enable_shared_from_this<SimpleDataPacketProtocol>
 {
   public:
     SimpleDataPacketProtocol();
     ~SimpleDataPacketProtocol();
 
+    std::shared_ptr<SimpleDataPacketProtocol> getptr()
+    {
+        return shared_from_this();
+    }
+
     int processData(char *data, int dataLength);
 
     void reset();
 
-    void setDelegate(SimpleDataPacketProtocolDelegate *newDelegate)
+    void setDelegate(std::shared_ptr<SimpleDataPacketProtocolDelegate> newDelegate)
     {
         delegate = newDelegate;
     }
 
   private:
-    SimpleDataPacketProtocolDelegate *delegate;
+    std::weak_ptr<SimpleDataPacketProtocolDelegate> delegate;
 
     std::vector<char> buffer;
 };

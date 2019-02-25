@@ -19,6 +19,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <usbmuxd.h>
 #include <thread>
 
+#include "logging.h"
 #include "Protocol.hpp"
 
 namespace portal
@@ -32,17 +33,22 @@ class ChannelDelegate
     virtual ~ChannelDelegate(){};
 };
 
-class Channel : public SimpleDataPacketProtocolDelegate
+class Channel : public SimpleDataPacketProtocolDelegate, public std::enable_shared_from_this<Channel>
 {
   public:
     Channel(int port, int sfd);
     ~Channel();
 
+    std::shared_ptr<Channel> getptr()
+    {
+        return shared_from_this();
+    }
+
     void close();
     
     void simpleDataPacketProtocolDelegateDidProcessPacket(std::vector<char> packet, int type, int tag);
 
-    void setDelegate(ChannelDelegate *newDelegate)
+    void setDelegate(std::shared_ptr<ChannelDelegate> newDelegate)
     {
         delegate = newDelegate;
     }
@@ -51,18 +57,22 @@ class Channel : public SimpleDataPacketProtocolDelegate
         return port;
     }
 
+    void configureProtocolDelegate() {
+        protocol->setDelegate(shared_from_this());
+    }
+
   private:
     int port;
     int conn;
 
-    void setPacketDelegate(SimpleDataPacketProtocolDelegate *newDelegate)
+    void setPacketDelegate(std::shared_ptr<SimpleDataPacketProtocolDelegate> newDelegate)
     {
-        protocol.setDelegate(newDelegate);
+        protocol->setDelegate(newDelegate);
     }
 
-    SimpleDataPacketProtocol protocol;
+    std::unique_ptr<SimpleDataPacketProtocol> protocol;
 
-    ChannelDelegate *delegate;
+    std::weak_ptr<ChannelDelegate> delegate;
 
     bool running = false;
 

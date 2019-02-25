@@ -22,6 +22,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <algorithm>
 #include <list>
 
+#include "logging.h"
 #include "Device.hpp"
 
 typedef void (*portal_channel_receive_cb_t)(char *buffer, int buffer_len, void *user_data);
@@ -68,6 +69,7 @@ class Portal : public ChannelDelegate, public std::enable_shared_from_this<Porta
     }
     
     PortalDelegate *delegate;
+
     Device::shared_ptr _device;
   private:
     

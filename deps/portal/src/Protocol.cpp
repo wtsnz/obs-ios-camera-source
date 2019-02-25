@@ -35,18 +35,12 @@ SimpleDataPacketProtocol::SimpleDataPacketProtocol()
 
 SimpleDataPacketProtocol::~SimpleDataPacketProtocol()
 {
-    buffer.clear();
+        buffer.clear();
     std::cout << "SimpleDataPacketProtocol destroyed\n";
 }
 
 int SimpleDataPacketProtocol::processData(char *data, int dataLength)
 {
-    if (this == nullptr)
-    {
-        printf("For some reason the simple data packet protocol doesn't exist");
-        return -1;
-    }
-    
     if (dataLength > 0)
     {
         // Add data recieved to the end of buffer.
@@ -89,10 +83,10 @@ int SimpleDataPacketProtocol::processData(char *data, int dataLength)
             std::vector<char>::const_iterator first = buffer.begin() + sizeof(PortalFrame);
             std::vector<char>::const_iterator last = buffer.begin() + sizeof(PortalFrame) + frame.payloadSize;
             std::vector<char> newVec(first, last);
-            
-            if (delegate != NULL)
-            {
-                delegate->simpleDataPacketProtocolDelegateDidProcessPacket(newVec, frame.type, frame.tag);
+
+            std::shared_ptr<SimpleDataPacketProtocolDelegate> strongDelegate = delegate.lock();
+            if (strongDelegate) {
+                strongDelegate->simpleDataPacketProtocolDelegateDidProcessPacket(newVec, frame.type, frame.tag);
             }
             
             // Remove the data from buffer

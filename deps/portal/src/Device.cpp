@@ -33,7 +33,7 @@ Device::Device(const usbmuxd_device_info_t &device) : _connected(false),
                         _productId(std::to_string(_device.product_id))
 {
 	s_devices[_uuid].push_back(this);
-	std::cout << "Added " << this << " to device list" << std::endl;
+    portal_log("Added %s to device list", this);
 }
 
 Device::Device(const Device &other) : _connected(other._connected),
@@ -41,7 +41,7 @@ Device::Device(const Device &other) : _connected(other._connected),
 									  _uuid(other._uuid)
 {
 	s_devices[_uuid].push_back(this);
-	std::cout << "Added " << this << " to device list (copy)" << std::endl;
+    portal_log("Added %s to device list (copy)", this);
 }
 
 Device &Device::operator=(const Device &rhs)
@@ -73,15 +73,16 @@ uint16_t Device::productID() const
 	return _device.product_id;
 }
 
-int Device::connect(uint16_t port, ChannelDelegate *newChannelDelegate)
+int Device::connect(uint16_t port, std::shared_ptr<ChannelDelegate> newChannelDelegate)
 {
 	int retval = 0;
 	int conn = usbmuxd_connect(_device.handle, port);
 
 	if (conn > 0)
 	{
-		connectedChannel = std::unique_ptr<Channel>(new Channel(port, conn));
-		connectedChannel->setDelegate(newChannelDelegate);
+		connectedChannel = std::shared_ptr<Channel>(new Channel(port, conn));
+        connectedChannel->configureProtocolDelegate();
+        connectedChannel->setDelegate(newChannelDelegate);
 	}
 
 	return retval;
@@ -119,7 +120,7 @@ Device::~Device()
 {
     disconnect();
 	removeFromDeviceList();
-	std::cout << "Removed " << this << " from device list" << std::endl;
+    portal_log("Removed %p from device list", this);
 }
 
 std::ostream &operator<<(std::ostream &os, const Device &v)

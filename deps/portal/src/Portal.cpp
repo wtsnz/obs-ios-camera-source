@@ -38,15 +38,19 @@ void pt_usbmuxd_cb(const usbmuxd_event_t *event, void *user_data)
 		client->removeDevice(event->device);
 		break;
 	}
-    
-    client->delegate->portalDidUpdateDeviceList(client->_devices);
+
+    if (client->delegate != NULL) {
+        client->delegate->portalDidUpdateDeviceList(client->_devices);
+    }
 }
 
 Portal::Portal(PortalDelegate *delegate) : _listening(false)
 {
     this->delegate = delegate;
-    
+
+#if PORTAL_DEBUG_LOG_ENABLED
     libusbmuxd_set_debug_level(10);
+#endif
 
     // Load the device list
     reloadDeviceList();
@@ -54,21 +58,22 @@ Portal::Portal(PortalDelegate *delegate) : _listening(false)
     startListeningForDevices();
 }
     
-    void Portal::connectToDevice(Device::shared_ptr device)
-    {
-        // Disconnect to previous device
-        if (_device) {
-            printf("%s: Disconnecting from old device \n", __func__);
-            _device->disconnect();
-            _device = nullptr;
-        }
-        
-        _device = device;
-        
-        printf("PORTAL (%p): Connecting to device: %s (%s)\n", this, device->getProductId().c_str(), device->uuid().c_str());
-
-        device->connect(2345, this);
+void Portal::connectToDevice(Device::shared_ptr device)
+{
+    // Disconnect to previous device
+    if (_device) {
+        portal_log("%s: Disconnecting from old device \n", __func__);
+        _device->disconnect();
+        _device = nullptr;
     }
+
+    _device = device;
+
+    portal_log("PORTAL (%p): Connecting to device: %s (%s)\n", this, device->getProductId().c_str(), device->uuid().c_str());
+
+    // Connect to the device with the channel delegate.
+    device->connect(2345, shared_from_this());
+}
 
     void Portal::removeDisconnectedDevices()
     {
@@ -125,7 +130,7 @@ int Portal::startListeningForDevices()
 	}
 
 	_listening = true;
-//    printf("%s: Listening for devices \n", __func__);
+    portal_log("%s: Listening for devices \n", __func__);
 
 	return 0;
 }
@@ -157,7 +162,7 @@ void Portal::addDevice(const usbmuxd_device_info_t &device)
 	{
 		Device::shared_ptr sp = Device::shared_ptr(new Device(device));
 		_devices.insert(DeviceMap::value_type(device.handle, sp));
-        printf("PORTAL (%p): Added device: %i (%s)\n", this, device.product_id, device.udid);
+        portal_log("PORTAL (%p): Added device: %i (%s)\n", this, device.product_id, device.udid);
 	}
 }
 
@@ -169,21 +174,21 @@ void Portal::removeDevice(const usbmuxd_device_info_t &device)
 	{
         it->second->disconnect();
 		_devices.erase(it);
-        printf("PORTAL (%p): Removed device: %i (%s)\n", this, device.product_id, device.udid);
+        portal_log("PORTAL (%p): Removed device: %i (%s)\n", this, device.product_id, device.udid);
 	}
 }
 
 void Portal::channelDidReceivePacket(std::vector<char> packet, int type, int tag)
 {
-	if (delegate != NULL)
-	{
-		delegate->portalDeviceDidReceivePacket(packet, type, tag);
-	}
+
+    if (delegate != NULL) {
+        delegate->portalDeviceDidReceivePacket(packet, type, tag);
+    }
 }
 
 void Portal::channelDidStop()
 {
-	std::cout << "Channel Did Stop in portal\n";
+    portal_log("Channel Did Stop in portal\n");
 }
 
 Portal::~Portal()
@@ -192,7 +197,5 @@ Portal::~Portal()
 	{
 		usbmuxd_unsubscribe();
 	}
-    
-//    disconnectAllDevices();
 }
 }

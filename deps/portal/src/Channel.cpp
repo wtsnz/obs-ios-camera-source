@@ -26,7 +26,7 @@ Channel::Channel(int port_, int conn_)
     port = port_;
     conn = conn_;
 
-    protocol.setDelegate(this);
+    protocol = std::make_unique<SimpleDataPacketProtocol>();
 
     running = StartInternalThread();
 }
@@ -35,7 +35,7 @@ Channel::~Channel()
 {
     running = false;
     WaitForInternalThreadToExit();
-    printf("%s: Deallocating\n", __func__);
+    portal_log("%s: Deallocating\n", __func__);
 }
 
 void Channel::close()
@@ -83,13 +83,13 @@ void Channel::InternalThreadEntry()
             if (numberOfBytesReceived > 0)
             {
                 if (running) {
-                    protocol.processData((char *)buffer, numberOfBytesReceived);
+                    protocol->processData((char *)buffer, numberOfBytesReceived);
                 }
             }
         }
         else
         {
-            printf("There was an error receiving data");
+            portal_log("There was an error receiving data");
             running = false;
         }
     }
@@ -97,9 +97,9 @@ void Channel::InternalThreadEntry()
 
 void Channel::simpleDataPacketProtocolDelegateDidProcessPacket(std::vector<char> packet, int type, int tag)
 {
-    if (this->delegate != NULL)
-    {
-        this->delegate->channelDidReceivePacket(packet, type, tag);
+    std::shared_ptr<ChannelDelegate> strongDelegate = delegate.lock();
+    if (strongDelegate) {
+        strongDelegate->channelDidReceivePacket(packet, type, tag);
     }
 }
 }
