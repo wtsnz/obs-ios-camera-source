@@ -29,6 +29,7 @@
 #define TEXT_INPUT_NAME obs_module_text("OBSIOSCamera.Title")
 
 #define SETTING_DEVICE_UUID "setting_device_uuid"
+#define SETTING_DEVICE_UUID_NONE_VALUE "null"
 
 class IOSCameraInput: public portal::PortalDelegate
 {
@@ -208,7 +209,7 @@ static bool refresh_devices(obs_properties_t *props, obs_property_t *p, void *da
     obs_property_t *dev_list = obs_properties_get(props, SETTING_DEVICE_UUID);
     obs_property_list_clear(dev_list);
 
-    obs_property_list_add_string(dev_list, "None", "null");
+    obs_property_list_add_string(dev_list, "None", SETTING_DEVICE_UUID_NONE_VALUE);
 
     int index = 1;
     std::for_each(devices.begin(), devices.end(), [dev_list, &index](std::map<int, portal::Device::shared_ptr>::value_type &deviceMap) {
