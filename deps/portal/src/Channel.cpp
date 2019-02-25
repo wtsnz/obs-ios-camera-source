@@ -76,7 +76,7 @@ void Channel::InternalThreadEntry()
 
         char buffer[numberOfBytesToAskFor];
 
-        int ret = usbmuxd_recv(conn, (char *)&buffer, numberOfBytesToAskFor, &numberOfBytesReceived);
+        int ret = usbmuxd_recv_timeout(conn, (char *)&buffer, numberOfBytesToAskFor, &numberOfBytesReceived, 10);
 
         if (ret == 0)
         {
