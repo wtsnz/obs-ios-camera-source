@@ -29,6 +29,7 @@
 #define TEXT_INPUT_NAME obs_module_text("OBSIOSCamera.Title")
 
 #define SETTING_DEVICE_UUID "setting_device_uuid"
+#define SETTING_DEVICE_UUID_NONE_VALUE "null"
 
 class IOSCameraInput: public portal::PortalDelegate
 {
@@ -36,27 +37,32 @@ public:
     obs_source_t *source;
     obs_data_t *settings;
 
-    portal::Portal portal;
     bool active = false;
     obs_source_frame frame;
-
     std::string deviceUUID;
 
-    //    VideoToolboxDecoder decoder;
+    std::shared_ptr<portal::Portal> sharedPortal;
+    portal::Portal portal;
     FFMpegVideoDecoder videoDecoder;
     FFMpegAudioDecoder audioDecoder;
 
-    inline IOSCameraInput(obs_source_t *source_, obs_data_t *settings)
+    IOSCameraInput(obs_source_t *source_, obs_data_t *settings)
     : source(source_), settings(settings), portal(this)
     {
-
         blog(LOG_INFO, "Creating instance of plugin!");
 
         memset(&frame, 0, sizeof(frame));
 
-        loadSettings(settings);
-
-        active = true;
+        /// In order for the internal Portal Delegates to work there
+        /// must be a shared_ptr to the instance of Portal.
+        ///
+        /// We create a shared pointer to the heap allocated Portal
+        /// instance, and wrap it up in a sharedPointer with a deleter
+        /// that doesn't do anything (this is handled automatically with
+        /// the class)
+        auto null_deleter = [](portal::Portal *portal) { UNUSED_PARAMETER(portal); };
+        auto portalReference = std::shared_ptr<portal::Portal>(&portal, null_deleter);
+        sharedPortal = portalReference;
 
         videoDecoder.source = source;
         videoDecoder.Init();
@@ -65,6 +71,9 @@ public:
         audioDecoder.Init();
 
         obs_source_set_async_unbuffered(source, true);
+
+        loadSettings(settings);
+        active = true;
     }
 
     inline ~IOSCameraInput()
@@ -119,7 +128,7 @@ public:
             auto _uuid = deviceMap.second->uuid();
 
             if (_uuid.compare(uuid) == 0) {
-                printf("comparing \n%s\n%s\n", _uuid.c_str(), uuid.c_str());
+                blog(LOG_DEBUG, "comparing \n%s\n%s\n", _uuid.c_str(), uuid.c_str());
                 portal.connectToDevice(deviceMap.second);
             }
 
@@ -173,15 +182,23 @@ public:
             for (const auto& [index, device] : deviceList) {
                 auto uuid = device.get()->uuid();
 
-                // Set the setting so that the UI in OBS Studio is updated
-                obs_data_set_string(this->settings, SETTING_DEVICE_UUID, uuid.c_str());
+                auto isFirstTimeConnectingToDevice = deviceUUID.size() == 0;
+                auto isDeviceConnected = device.get()->isConnected();
+                auto isThisDeviceTheSameAsThePreviouslyConnectedDevice = deviceUUID.compare(uuid) == 0;
 
-                // Connect to the device
-                connectToDevice(uuid);
+                if (isFirstTimeConnectingToDevice || (isThisDeviceTheSameAsThePreviouslyConnectedDevice && !isDeviceConnected)) {
+
+                    // Set the setting so that the UI in OBS Studio is updated
+                    obs_data_set_string(this->settings, SETTING_DEVICE_UUID, uuid.c_str());
+
+                    // Connect to the device
+                    connectToDevice(uuid);
+                }
             }
 
         } else {
-            // User will have to configure due to more than one device
+            // User will have to configure the plugin manually when more than one device is plugged in
+            // due to the fact that multiple instances of the plugin can't subscribe to device events...
         }
     }
 };
@@ -200,7 +217,7 @@ static bool refresh_devices(obs_properties_t *props, obs_property_t *p, void *da
     obs_property_t *dev_list = obs_properties_get(props, SETTING_DEVICE_UUID);
     obs_property_list_clear(dev_list);
 
-    obs_property_list_add_string(dev_list, "None", "null");
+    obs_property_list_add_string(dev_list, "None", SETTING_DEVICE_UUID_NONE_VALUE);
 
     int index = 1;
     std::for_each(devices.begin(), devices.end(), [dev_list, &index](std::map<int, portal::Device::shared_ptr>::value_type &deviceMap) {

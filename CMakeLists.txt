@@ -146,6 +146,7 @@ set(portal_HEADERS
 	deps/portal/src/Device.hpp
 	deps/portal/src/Portal.hpp
 	deps/portal/src/Protocol.hpp
+	deps/portal/src/logging.h
 )
 
 set(portal_SOURCES

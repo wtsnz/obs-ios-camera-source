@@ -5,6 +5,8 @@
 /build64/
 /release/
 /installer/Output/
-
+obsdeps/
+build-xcode/
 .vscode
 .idea
+osx-deps-2018-08-09.tar.gz
