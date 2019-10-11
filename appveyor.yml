@@ -6,10 +6,10 @@ environment:
 install:
   - git submodule update --init --recursive
   - cd C:\projects\
-  - if not exist dependencies2015.zip curl -kLO https://obsproject.com/downloads/dependencies2015.zip -f --retry 5 -C -
-  - 7z x dependencies2015.zip -odependencies2015
-  - set DepsPath32=%CD%\dependencies2015\win32
-  - set DepsPath64=%CD%\dependencies2015\win64
+  - if not exist dependencies2017.zip curl -kLO https://obsproject.com/downloads/dependencies2017.zip -f --retry 5 -C -
+  - 7z x dependencies2017.zip -odependencies2017
+  - set DepsPath32=%CD%\dependencies2017\win32
+  - set DepsPath64=%CD%\dependencies2017\win64
   - call C:\projects\obs-ios-camera-source\CI\install-setup-qt.cmd
   - set build_config=Release
   - call C:\projects\obs-ios-camera-source\CI\install-build-obs.cmd
@@ -37,6 +37,6 @@ deploy_script:
 test: off
 
 cache:
-  - C:\projects\dependencies2015.zip
+  - C:\projects\dependencies2017.zip
   - C:\projects\obs-studio-last-tag-built.txt
   - C:\projects\obs-studio\
