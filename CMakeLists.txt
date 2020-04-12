@@ -7,13 +7,21 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set (CMAKE_CXX_STANDARD 17)
 
-include(external/FindLibObs.cmake)
+if (WIN32 OR APPLE)
+    include(external/FindLibObs.cmake)
+endif()
 
 find_package(LibObs REQUIRED)
 
 find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil)
 # find_ffmpeg_library(avcodec)
 # find_ffmpeg_library(avutil)
+
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	set(ARCH 64)
+else()
+	set(ARCH 32)
+endif()
 
 if(WIN32)
 	find_library(WS2_32_LIBRARY ws2_32)
@@ -261,12 +269,18 @@ if(WIN32)
 		message(FATAL_ERROR "Could not find OBS Frontend API\'s library !")
 	endif()
 
-	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-		set(ARCH_NAME "64bit")
+	if(MSVC)
+        # Enable Multicore Builds and disable FH4 (to not depend on VCRUNTIME140_1.DLL)
+	    add_definitions(/MP /d2FH4-)
+    endif()
+
+	if(ARCH EQUAL 64)
+		set(OBS_ARCH_NAME "64bit")
 		set(OBS_BUILDDIR_ARCH "build64")
 	else()
-		set(ARCH_NAME "32bit")
+		set(OBS_ARCH_NAME "32bit")
 		set(OBS_BUILDDIR_ARCH "build32")
+		add_definitions(/arch:SSE2)
 	endif()
 
 	include_directories(
@@ -281,24 +295,50 @@ if(WIN32)
 	set(RELEASE_DIR "${PROJECT_SOURCE_DIR}/release")
 
 	add_custom_command(TARGET obs-ios-camera-source POST_BUILD
+		# If config is Release, package release files
 		COMMAND if $<CONFIG:Release>==1 (
 			"${CMAKE_COMMAND}" -E make_directory
-			"${RELEASE_DIR}/data/obs-plugins/obs-ios-camera-source"
-			"${RELEASE_DIR}/obs-plugins/${ARCH_NAME}")
-			
-		COMMAND if $<CONFIG:Release>==1 ("${CMAKE_COMMAND}" -E copy_directory
-			"${PROJECT_SOURCE_DIR}/data"
-			"${RELEASE_DIR}/data/obs-plugins/obs-ios-camera-source")
+				"${RELEASE_DIR}/data/obs-plugins/obs-ios-camera-source"
+				"${RELEASE_DIR}/obs-plugins/${OBS_ARCH_NAME}")
 
-		COMMAND if $<CONFIG:Release>==1 ("${CMAKE_COMMAND}" -E copy 
-			"$<TARGET_FILE:obs-ios-camera-source>"
-			"${RELEASE_DIR}/obs-plugins/${ARCH_NAME}")
+		COMMAND if $<CONFIG:Release>==1 (
+			"${CMAKE_COMMAND}" -E copy_directory
+				"${PROJECT_SOURCE_DIR}/data"
+				"${RELEASE_DIR}/data/obs-plugins/obs-ios-camera-source")
+
+		COMMAND if $<CONFIG:Release>==1 (
+			"${CMAKE_COMMAND}" -E copy
+				"$<TARGET_FILE:obs-ios-camera-source>"
+				"${RELEASE_DIR}/obs-plugins/${OBS_ARCH_NAME}")
+				
+
+        # If config is RelWithDebInfo, package release files
+		COMMAND if $<CONFIG:RelWithDebInfo>==1 (
+			"${CMAKE_COMMAND}" -E make_directory
+			    "${RELEASE_DIR}/data/obs-plugins/obs-ios-camera-source"
+			    "${RELEASE_DIR}/obs-plugins/${OBS_ARCH_NAME}")
+
+		COMMAND if $<CONFIG:RelWithDebInfo>==1 (
+            "${CMAKE_COMMAND}" -E copy_directory
+			    "${PROJECT_SOURCE_DIR}/data"
+			    "${RELEASE_DIR}/data/obs-plugins/obs-ios-camera-source")
+
+		COMMAND if $<CONFIG:RelWithDebInfo>==1 (
+            "${CMAKE_COMMAND}" -E copy
+			    "$<TARGET_FILE:obs-ios-camera-source>"
+			    "${RELEASE_DIR}/obs-plugins/${OBS_ARCH_NAME}")
+
+		COMMAND if $<CONFIG:RelWithDebInfo>==1 (
+            "${CMAKE_COMMAND}" -E copy
+			    "$<TARGET_PDB_FILE:obs-ios-camera-source>"
+			    "${RELEASE_DIR}/obs-plugins/${OBS_ARCH_NAME}")
+
 
 		# Copy to obs-studio dev environment for immediate testing
 		COMMAND if $<CONFIG:Debug>==1 (
 			"${CMAKE_COMMAND}" -E copy
 				"$<TARGET_FILE:obs-ios-camera-source>"
-				"${LIBOBS_INCLUDE_DIR}/../${OBS_BUILDDIR_ARCH}/rundir/$<CONFIG>/obs-plugins/${ARCH_NAME}")
+				"${LIBOBS_INCLUDE_DIR}/../${OBS_BUILDDIR_ARCH}/rundir/$<CONFIG>/obs-plugins/${OBS_ARCH_NAME}")
 
 		COMMAND if $<CONFIG:Debug>==1 (
 			"${CMAKE_COMMAND}" -E make_directory
@@ -311,24 +351,6 @@ if(WIN32)
 	)
 	# --- End of sub-section ---
 
-endif()
-# --- End of section ---
-
-# --- Linux-specific build settings and tasks ---
-if(UNIX AND NOT APPLE)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
-
-	target_compile_options(mbedcrypto PRIVATE -fPIC)
-	set_target_properties(obs-ios-camera-source-win PROPERTIES PREFIX "")
-	target_link_libraries(obs-ios-camera-source-win
-		obs-frontend-api)
-
-	file(GLOB locale_files data/locale/*.ini)
-
-	install(TARGETS obs-ios-camera-source
-		LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/obs-plugins")
-	install(FILES ${locale_files}
-		DESTINATION "${CMAKE_INSTALL_PREFIX}/share/obs/obs-plugins/obs-ios-camera-source-win/locale")
 endif()
 # --- End of section ---
 
