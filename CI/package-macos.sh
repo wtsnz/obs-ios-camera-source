@@ -13,15 +13,14 @@ echo "[obs-ios-camera-plugin] Preparing package build"
 
 export GIT_HASH=$(git rev-parse --short HEAD)
 
-export VERSION="$GIT_HASH-$TRAVIS_BRANCH"
-export LATEST_VERSION="$TRAVIS_BRANCH"
-if [ -n "${TRAVIS_TAG}" ]; then
-	export VERSION="$TRAVIS_TAG"
-	export LATEST_VERSION="$TRAVIS_TAG"
-fi
+GIT_HASH=$(git rev-parse --short HEAD)
+GIT_BRANCH_OR_TAG=$(git name-rev --name-only HEAD | awk -F/ '{print $NF}')
 
-export FILENAME="obs-ios-camera-source-$VERSION.pkg"
-export LATEST_FILENAME="obs-ios-camera-source-latest-$LATEST_VERSION.pkg"
+VERSION="$GIT_HASH-$GIT_BRANCH_OR_TAG"
+LATEST_VERSION="$GIT_BRANCH_OR_TAG"
+
+FILENAME_UNSIGNED="obs-ios-camera-source-$VERSION-Unsigned.pkg"
+FILENAME="obs-ios-camera-source-$VERSION.pkg"
 
 echo "-- Modifying obs-ios-camera-source.so"
 install_name_tool \
@@ -34,9 +33,38 @@ install_name_tool \
 echo "-- Dependencies for obs-ios-camera-source"
 otool -L ./build/obs-ios-camera-source.so
 
+if [[ "$RELEASE_MODE" == "True" ]]; then
+	echo "-- Signing plugin binary: obs-ios-camera-source.so"
+	codesign --sign "$CODE_SIGNING_IDENTITY" ./build/obs-ios-camera-source.so
+else
+	echo "-- Skipped plugin codesigning"
+fi
+
 echo "-- Actual package build"
 packagesbuild ./CI/macos/obs-ios-camera-source.pkgproj
 
-echo "-- Renaming obs-ios-camera-source.pkg to $FILENAME"
-mv ./release/obs-ios-camera-source.pkg ./release/$FILENAME
-cp ./release/$FILENAME ./release/$LATEST_FILENAME
+echo "-- Renaming obs-ios-camera-source.pkg to $FILENAME_UNSIGNED"
+mkdir release
+mv ./release/obs-ios-camera-source.pkg ./release/$FILENAME_UNSIGNED
+
+if [[ "$RELEASE_MODE" == "True" ]]; then
+	echo "[obs-ios-camera-source] Signing installer: $FILENAME"
+	productsign \
+		--sign "$INSTALLER_SIGNING_IDENTITY" \
+		./release/$FILENAME_UNSIGNED \
+		./release/$FILENAME
+
+	echo "[obs-ios-camera-source] Submitting installer $FILENAME for notarization"
+	zip -r ./release/$FILENAME.zip ./release/$FILENAME
+	xcrun altool \
+		--notarize-app \
+		--primary-bundle-id "io.loftlabs.obs-ios-camera-source.pkg"
+		--username $AC_USERNAME
+		--password $AC_PASSWORD
+		--asc-provider $AC_PROVIDER_SHORTNAME
+		--file ./release/$FILENAME.zip
+
+	rm ./release/$FILENAME_UNSIGNED ./release/$FILENAME.zip
+else
+	echo "[obs-ios-camera-source] Skipped installer codesigning and notarization"
+fi

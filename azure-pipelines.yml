@@ -117,22 +117,22 @@ jobs:
       - script: ./CI/build-macos.sh
         displayName: 'Build obs-ios-camera-source'
   
-    #   - task: InstallAppleCertificate@1
-    #     displayName: 'Install release signing certificates'
-    #     condition: eq(variables['isReleaseMode'], true)
-    #     inputs:
-    #       certSecureFile: 'Certificates.p12'
-    #       certPwd: $(secrets.macOS.certificatesImportPassword)
+      - task: InstallAppleCertificate@1
+        displayName: 'Install release signing certificates'
+        condition: eq(variables['isReleaseMode'], true)
+        inputs:
+          certSecureFile: 'Certificates.p12'
+          certPwd: $(secrets.macOS.certificatesImportPassword)
   
       - script: ./CI/package-macos.sh
         displayName: 'Package obs-ios-camera-source'
         env:
           RELEASE_MODE: $(isReleaseMode)
-        #   CODE_SIGNING_IDENTITY: $(secrets.macOS.codeSigningIdentity)
-        #   INSTALLER_SIGNING_IDENTITY: $(secrets.macOS.installerSigningIdentity)
-        #   AC_USERNAME: $(secrets.macOS.notarization.username)
-        #   AC_PASSWORD: $(secrets.macOS.notarization.password)
-        #   AC_PROVIDER_SHORTNAME: $(secrets.macOS.notarization.providerShortName)
+          CODE_SIGNING_IDENTITY: $(secrets.macOS.codeSigningIdentity)
+          INSTALLER_SIGNING_IDENTITY: $(secrets.macOS.installerSigningIdentity)
+          AC_USERNAME: $(secrets.macOS.notarization.username)
+          AC_PASSWORD: $(secrets.macOS.notarization.password)
+          AC_PROVIDER_SHORTNAME: $(secrets.macOS.notarization.providerShortName)
   
       - task: PublishBuildArtifacts@1
         inputs:
