@@ -54,15 +54,34 @@ if [[ "$RELEASE_MODE" == "True" ]]; then
 
 	echo "[obs-ios-camera-source] Submitting installer $FILENAME for notarization"
 	zip -r ./release/$FILENAME.zip ./release/$FILENAME
-	xcrun altool \
+	UPLOAD_RESULT=$(xcrun altool \
 		--notarize-app \
-		--primary-bundle-id "io.loftlabs.obs-ios-camera-source.pkg"
-		--username $AC_USERNAME
-		--password $AC_PASSWORD
-		--asc-provider $AC_PROVIDER_SHORTNAME
-		--file ./release/$FILENAME.zip
+		--primary-bundle-id "io.loftlabs.obs-ios-camera-source.pkg" \
+		--username "$AC_USERNAME" \
+		--password "$AC_PASSWORD" \
+		--asc-provider "$AC_PROVIDER_SHORTNAME" \
+		--file "./release/$FILENAME.zip")
+	rm ./release/$FILENAME.zip
 
-	rm ./release/$FILENAME_UNSIGNED ./release/$FILENAME.zip
+	REQUEST_UUID=$(echo $UPLOAD_RESULT | awk -F ' = ' '/RequestUUID/ {print $2}')
+	echo "Request UUID: $REQUEST_UUID"
+
+	echo "[obs-ios-camera-source] Wait for notarization result"
+	# Pieces of code borrowed from rednoah/notarized-app
+	while sleep 30 && date; do
+		CHECK_RESULT=$(xcrun altool \
+			--notarization-info "$REQUEST_UUID" \
+			--username "$AC_USERNAME" \
+			--password "$AC_PASSWORD" \
+			--asc-provider "$AC_PROVIDER_SHORTNAME")
+		echo $CHECK_RESULT
+
+		if ! grep -q "Status: in progress" <<< "$CHECK_RESULT"; then
+			echo "[obs-ios-camera-source] Staple ticket to installer: $FILENAME"
+			xcrun stapler staple ./release/$FILENAME
+			break
+		fi
+	done
 else
 	echo "[obs-ios-camera-source] Skipped installer codesigning and notarization"
 fi
