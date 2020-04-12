@@ -20,16 +20,24 @@ if [ "${HAS_GIT}" = "" ]; then
     exit 1
 fi
 
+echo "[obs-ios-camera-plugin] Downloading and unpacking OBS dependencies"
+wget --quiet --retry-connrefused --waitretry=1 https://obs-nightly.s3.amazonaws.com/osx-deps-2018-08-09.tar.gz
+tar -xf ./osx-deps-2018-08-09.tar.gz -C /tmp
+
 # Build obs-studio
 cd ..
 echo "[obs-ios-camera-plugin] Cloning obs-studio from GitHub.."
 git clone https://github.com/obsproject/obs-studio
 cd obs-studio
-OBSLatestTag=$(git describe --tags --abbrev=0)
-git checkout $OBSLatestTag
+# OBSLatestTag=$(git describe --tags --abbrev=0)
+# git checkout $OBSLatestTag
+git checkout 24.0.6
 mkdir build && cd build
 echo "[obs-ios-camera-plugin] Building obs-studio.."
 cmake .. \
+	-DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 \
 	-DDISABLE_PLUGINS=true \
+    -DENABLE_SCRIPTING=0 \
+	-DDepsPath=/tmp/obsdeps \
 	-DCMAKE_PREFIX_PATH=/usr/local/opt/qt/lib/cmake \
 && make -j4
