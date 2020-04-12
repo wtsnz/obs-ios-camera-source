@@ -1,7 +1,7 @@
 variables:
     isReleaseMode: ${{ startsWith(variables['Build.SourceBranch'], 'refs/tags/') }}
   
-  trigger:
+trigger:
     branches:
       include:
         - master
@@ -9,7 +9,7 @@ variables:
       include:
         - '*'
   
-  jobs:
+jobs:
   - job: 'Build_Windows'
     pool:
       vmImage: 'windows-2019'
