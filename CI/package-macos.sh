@@ -11,8 +11,6 @@ fi
 
 echo "[obs-ios-camera-plugin] Preparing package build"
 
-export GIT_HASH=$(git rev-parse --short HEAD)
-
 GIT_HASH=$(git rev-parse --short HEAD)
 GIT_BRANCH_OR_TAG=$(git name-rev --name-only HEAD | awk -F/ '{print $NF}')
 
@@ -44,7 +42,7 @@ echo "-- Actual package build"
 packagesbuild ./CI/macos/obs-ios-camera-source.pkgproj
 
 echo "-- Renaming obs-ios-camera-source.pkg to $FILENAME_UNSIGNED"
-mkdir release
+# mkdir release
 mv ./release/obs-ios-camera-source.pkg ./release/$FILENAME_UNSIGNED
 
 if [[ "$RELEASE_MODE" == "True" ]]; then
