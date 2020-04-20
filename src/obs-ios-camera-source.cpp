@@ -96,7 +96,7 @@ public:
 
         blog(LOG_INFO, "Loaded Settings: Connecting to device");
 
-        connectToDevice(device_uuid);
+        connectToDevice(device_uuid, false);
     }
 
     void reconnectToDevice()
@@ -105,22 +105,28 @@ public:
             return;
         }
 
-        connectToDevice(deviceUUID);
+        connectToDevice(deviceUUID, true);
     }
 
-    void connectToDevice(std::string uuid) {
+    void connectToDevice(std::string uuid, bool force) {
 
-        deviceUUID = std::string(uuid);
+        if (portal._device) {
+            // Make sure that we're not already connected to the device
+            if (force == false && portal._device->uuid().compare(uuid) == 0 && portal._device->isConnected()) {
+                blog(LOG_DEBUG, "Already connected to the device. Skipping.");
+                return;
+            } else {
+                // Disconnect from from the old device
+                portal._device->disconnect();
+                portal._device = nullptr;
+            }
+        }
 
         blog(LOG_INFO, "Connecting to device");
 
-        if (portal._device) {
-            portal._device->disconnect();
-            portal._device = nullptr;
-        }
-
         // Find device
         auto devices = portal.getDevices();
+        deviceUUID = std::string(uuid);
 
         int index = 0;
         std::for_each(devices.begin(), devices.end(), [this, uuid, &index](std::map<int, portal::Device::shared_ptr>::value_type &deviceMap) {
@@ -192,7 +198,7 @@ public:
                     obs_data_set_string(this->settings, SETTING_DEVICE_UUID, uuid.c_str());
 
                     // Connect to the device
-                    connectToDevice(uuid);
+                    connectToDevice(uuid, false);
                 }
             }
 
@@ -331,7 +337,7 @@ static void UpdateIOSCameraInput(void *data, obs_data_t *settings)
 
     // Connect to the device
     auto uuid = obs_data_get_string(settings, SETTING_DEVICE_UUID);
-    input->connectToDevice(uuid);
+    input->connectToDevice(uuid, false);
 }
 
 void RegisterIOSCameraSource()
