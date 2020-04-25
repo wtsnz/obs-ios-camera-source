@@ -23,7 +23,6 @@ int ffmpeg_decode_init(struct ffmpeg_decode *decode, enum AVCodecID id)
 {
     int ret;
 
-    avcodec_register_all();
     memset(decode, 0, sizeof(*decode));
 
     decode->codec = avcodec_find_decoder(id);
