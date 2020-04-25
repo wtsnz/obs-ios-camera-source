@@ -42,6 +42,7 @@ int ffmpeg_decode_init(struct ffmpeg_decode *decode, enum AVCodecID id)
     if (decode->codec->capabilities & CODEC_CAP_TRUNC)
         decode->decoder->flags |= CODEC_FLAG_TRUNC;
 
+    decode->decoder->flags |= AV_CODEC_FLAG_LOW_DELAY;
     decode->decoder->flags2 = AV_CODEC_FLAG2_CHUNKS;
 
     return 0;
@@ -233,8 +234,6 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode,
     packet.data = decode->packet_buffer;
     packet.size = (int)size;
     packet.pts = *ts;
-    //    packet.flags |= CODEC_FLAG_TRUNCATED; /* We may send incomplete frames */
-    //    packet.flags |= CODEC_FLAG2_CHUNKS;
 
     if (decode->codec->id == AV_CODEC_ID_H264 && obs_avc_keyframe(data, size))
     {
