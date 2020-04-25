@@ -30,6 +30,9 @@
 
 #define SETTING_DEVICE_UUID "setting_device_uuid"
 #define SETTING_DEVICE_UUID_NONE_VALUE "null"
+#define SETTING_PROP_LATENCY "latency"
+#define SETTING_PROP_LATENCY_NORMAL 0
+#define SETTING_PROP_LATENCY_LOW 1
 
 class IOSCameraInput: public portal::PortalDelegate
 {
@@ -69,8 +72,6 @@ public:
 
         audioDecoder.source = source;
         audioDecoder.Init();
-
-        obs_source_set_async_unbuffered(source, true);
 
         loadSettings(settings);
         active = true;
@@ -313,6 +314,15 @@ static obs_properties_t *GetIOSCameraProperties(void *data)
     obs_properties_add_button(ppts, "setting_refresh_devices", "Refresh Devices", refresh_devices);
     obs_properties_add_button(ppts, "setting_button_connect_to_device", "Reconnect to Device", reconnect_to_device);
 
+    obs_property_t* latency_modes = obs_properties_add_list(ppts, SETTING_PROP_LATENCY, obs_module_text("OBSIOSCamera.Settings.Latency"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+
+    obs_property_list_add_int(latency_modes,
+        obs_module_text("OBSIOSCamera.Settings.Latency.Normal"),
+        SETTING_PROP_LATENCY_NORMAL);
+    obs_property_list_add_int(latency_modes,
+        obs_module_text("OBSIOSCamera.Settings.Latency.Low"),
+        SETTING_PROP_LATENCY_LOW);
+
     return ppts;
 }
 
@@ -320,6 +330,7 @@ static obs_properties_t *GetIOSCameraProperties(void *data)
 static void GetIOSCameraDefaults(obs_data_t *settings)
 {
     obs_data_set_default_string(settings, SETTING_DEVICE_UUID, "");
+    obs_data_set_default_int(settings, SETTING_PROP_LATENCY, SETTING_PROP_LATENCY_LOW);
 }
 
 static void SaveIOSCameraInput(void *data, obs_data_t *settings)
@@ -338,6 +349,10 @@ static void UpdateIOSCameraInput(void *data, obs_data_t *settings)
     // Connect to the device
     auto uuid = obs_data_get_string(settings, SETTING_DEVICE_UUID);
     input->connectToDevice(uuid, false);
+
+    const bool is_unbuffered =
+        (obs_data_get_int(settings, SETTING_PROP_LATENCY) == SETTING_PROP_LATENCY_LOW);
+    obs_source_set_async_unbuffered(input->source, is_unbuffered);
 }
 
 void RegisterIOSCameraSource()
