@@ -36,14 +36,14 @@ public:
     virtual void* run() = 0;
     
     bool shouldStop() {
-        return mShouldStop;
+        return mShouldStop.load();
     }
     
 private:
     
     std::thread *mThread;
-    bool mRunning;
-    bool mShouldStop;
+    std::atomic<bool> mRunning;
+    std::atomic<bool> mShouldStop;
 };
 
 #endif /* Thread_hpp */

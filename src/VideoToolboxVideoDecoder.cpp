@@ -30,6 +30,11 @@ VideoToolboxDecoder::VideoToolboxDecoder()
     memset(&frame, 0, sizeof(frame));
 }
 
+VideoToolboxDecoder::~VideoToolboxDecoder()
+{
+    this->Shutdown();
+}
+
 void VideoToolboxDecoder::Init()
 {
     // Start the thread.
@@ -48,21 +53,24 @@ void VideoToolboxDecoder::Drain()
 
 void VideoToolboxDecoder::Shutdown()
 {
-    this->join();
+    mQueue.stop();
 
     if (mSession != NULL) {
         VTDecompressionSessionInvalidate(mSession);
     }
 
     mSession = NULL;
+
+    this->join();
 }
 
 void *VideoToolboxDecoder::run() {
 
-    for (int i = 0;; i++) {
-
+    while (shouldStop() == false) {
         PacketItem *item = (PacketItem *)mQueue.remove();
-        this->processPacketItem(item);
+        if (item != NULL) {
+            this->processPacketItem(item);
+        }
         delete item;
     }
 
