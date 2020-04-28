@@ -21,6 +21,7 @@
 
 #include <stdio.h>
 #include <thread>
+#include <atomic>
 
 class Thread
 {
