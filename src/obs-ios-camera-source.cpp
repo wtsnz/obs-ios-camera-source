@@ -84,6 +84,9 @@ public:
         ffmpegVideoDecoder.source = source;
         ffmpegVideoDecoder.Init();
 
+        audioDecoder.source = source;
+        audioDecoder.Init();
+
         videoDecoder = &ffmpegVideoDecoder;
 
         loadSettings(settings);
@@ -161,7 +164,6 @@ public:
         try
         {
             switch (type) {
-
                 case 101: // Video Packet
                     this->videoDecoder->Input(packet, type, tag);
                     break;
