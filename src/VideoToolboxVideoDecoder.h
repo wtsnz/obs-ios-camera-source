@@ -19,6 +19,7 @@
 #include <obs.h>
 #include <chrono>
 #include <vector>
+#include <util/platform.h>
 
 #include <VideoToolbox/VideoToolbox.h>
 

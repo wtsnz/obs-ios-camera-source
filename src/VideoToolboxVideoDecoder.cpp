@@ -246,15 +246,10 @@ void VideoToolboxDecoder::processPacketItem(PacketItem *packetItem)
                                   &sampleSize,
                                   &sampleBuffer);
 
-    // set some values of the sample buffer's attachments
-    //    CFArrayRef attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, YES);
-    //    CFMutableDictionaryRef dict = (CFMutableDictionaryRef)CFArrayGetValueAtIndex(attachments, 0);
-    //    CFDictionarySetValue(dict, kCMSampleAttachmentKey_DisplayImmediately, kCFBooleanTrue);
-
-    VTDecodeFrameFlags flags = kVTDecodeFrame_1xRealTimePlayback;
+    VTDecodeFrameFlags flags = 0;
     VTDecodeInfoFlags flagOut;
 
-    long long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    auto now = os_gettime_ns();
 
     VTDecompressionSessionDecodeFrame(mSession, sampleBuffer, flags,
                                       (void*)now, &flagOut);
@@ -362,8 +357,7 @@ bool VideoToolboxDecoder::update_frame(obs_source_t *capture, obs_source_frame *
     // video_format    format = format_from_subtype(fourcc);
     CMVideoDimensions dims = CMVideoFormatDescriptionGetDimensions(formatDesc);
 
-    long long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    frame->timestamp = now;
+    frame->timestamp = os_gettime_ns();
     frame->width    = dims.width;
     frame->height   = dims.height;
     frame->format   = VIDEO_FORMAT_BGRA;
