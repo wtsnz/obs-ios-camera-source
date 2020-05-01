@@ -24,12 +24,19 @@
 
 #include "FFMpegVideoDecoder.h"
 #include "FFMpegAudioDecoder.h"
-//#include "VideoToolboxVideoDecoder.h"
+#ifdef __APPLE__
+    #include "VideoToolboxVideoDecoder.h"
+#endif
 
 #define TEXT_INPUT_NAME obs_module_text("OBSIOSCamera.Title")
 
 #define SETTING_DEVICE_UUID "setting_device_uuid"
 #define SETTING_DEVICE_UUID_NONE_VALUE "null"
+#define SETTING_PROP_LATENCY "latency"
+#define SETTING_PROP_LATENCY_NORMAL 0
+#define SETTING_PROP_LATENCY_LOW 1
+
+#define SETTING_PROP_HARDWARE_DECODER "setting_use_hw_decoder"
 
 class IOSCameraInput: public portal::PortalDelegate
 {
@@ -43,7 +50,12 @@ public:
 
     std::shared_ptr<portal::Portal> sharedPortal;
     portal::Portal portal;
-    FFMpegVideoDecoder videoDecoder;
+
+    VideoDecoder *videoDecoder;
+#ifdef __APPLE__
+    VideoToolboxDecoder videoToolboxVideoDecoder;
+#endif
+    FFMpegVideoDecoder ffmpegVideoDecoder;
     FFMpegAudioDecoder audioDecoder;
 
     IOSCameraInput(obs_source_t *source_, obs_data_t *settings)
@@ -64,13 +76,18 @@ public:
         auto portalReference = std::shared_ptr<portal::Portal>(&portal, null_deleter);
         sharedPortal = portalReference;
 
-        videoDecoder.source = source;
-        videoDecoder.Init();
+#ifdef __APPLE__
+        videoToolboxVideoDecoder.source = source;
+        videoToolboxVideoDecoder.Init();
+#endif
+
+        ffmpegVideoDecoder.source = source;
+        ffmpegVideoDecoder.Init();
 
         audioDecoder.source = source;
         audioDecoder.Init();
 
-        obs_source_set_async_unbuffered(source, true);
+        videoDecoder = &ffmpegVideoDecoder;
 
         loadSettings(settings);
         active = true;
@@ -147,9 +164,8 @@ public:
         try
         {
             switch (type) {
-
                 case 101: // Video Packet
-                    this->videoDecoder.Input(packet, type, tag);
+                    this->videoDecoder->Input(packet, type, tag);
                     break;
                 case 102: // Audio Packet
                     this->audioDecoder.Input(packet, type, tag);
@@ -313,6 +329,20 @@ static obs_properties_t *GetIOSCameraProperties(void *data)
     obs_properties_add_button(ppts, "setting_refresh_devices", "Refresh Devices", refresh_devices);
     obs_properties_add_button(ppts, "setting_button_connect_to_device", "Reconnect to Device", reconnect_to_device);
 
+    obs_property_t* latency_modes = obs_properties_add_list(ppts, SETTING_PROP_LATENCY, obs_module_text("OBSIOSCamera.Settings.Latency"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+
+    obs_property_list_add_int(latency_modes,
+        obs_module_text("OBSIOSCamera.Settings.Latency.Normal"),
+        SETTING_PROP_LATENCY_NORMAL);
+    obs_property_list_add_int(latency_modes,
+        obs_module_text("OBSIOSCamera.Settings.Latency.Low"),
+        SETTING_PROP_LATENCY_LOW);
+
+#ifdef __APPLE__
+    obs_properties_add_bool(ppts, SETTING_PROP_HARDWARE_DECODER,
+        obs_module_text("OBSIOSCamera.Settings.UseHardwareDecoder"));
+#endif
+
     return ppts;
 }
 
@@ -320,6 +350,10 @@ static obs_properties_t *GetIOSCameraProperties(void *data)
 static void GetIOSCameraDefaults(obs_data_t *settings)
 {
     obs_data_set_default_string(settings, SETTING_DEVICE_UUID, "");
+    obs_data_set_default_int(settings, SETTING_PROP_LATENCY, SETTING_PROP_LATENCY_LOW);
+#ifdef __APPLE__
+    obs_data_set_default_bool(settings, SETTING_PROP_HARDWARE_DECODER, false);
+#endif
 }
 
 static void SaveIOSCameraInput(void *data, obs_data_t *settings)
@@ -338,6 +372,21 @@ static void UpdateIOSCameraInput(void *data, obs_data_t *settings)
     // Connect to the device
     auto uuid = obs_data_get_string(settings, SETTING_DEVICE_UUID);
     input->connectToDevice(uuid, false);
+
+    const bool is_unbuffered =
+        (obs_data_get_int(settings, SETTING_PROP_LATENCY) == SETTING_PROP_LATENCY_LOW);
+    obs_source_set_async_unbuffered(input->source, is_unbuffered);
+
+#ifdef __APPLE__
+    bool useHardwareDecoder = obs_data_get_bool(settings, SETTING_PROP_HARDWARE_DECODER);
+
+    if (useHardwareDecoder) {
+        input->videoDecoder = &input->videoToolboxVideoDecoder;
+    } else {
+        input->videoDecoder = &input->ffmpegVideoDecoder;
+    }
+#endif
+
 }
 
 void RegisterIOSCameraSource()

@@ -19,6 +19,7 @@
 #include <obs.h>
 #include <chrono>
 #include <vector>
+#include <util/platform.h>
 
 #include <VideoToolbox/VideoToolbox.h>
 
@@ -26,18 +27,12 @@
 #include "Thread.hpp"
 #include "VideoDecoder.h"
 
-//class VideoToolboxDecoderCallback {
-//public:
-//    virtual ~VideoToolboxDecoderCallback() {}
-//
-//    virtual void VideoToolboxDecodedFrame(CVPixelBufferRef aImage, CMVideoFormatDescriptionRef formatDescription) = 0;
-//};
-
 class VideoToolboxDecoder: public VideoDecoder, private Thread
 {
 public:
     VideoToolboxDecoder();
-    
+    ~VideoToolboxDecoder();
+
     void Init() override;
     
     void Input(std::vector<char> packet, int type, int tag) override;
@@ -52,7 +47,6 @@ public:
     
     // The OBS Source to update.
     obs_source_t *source;
-    
     
 private:
     
