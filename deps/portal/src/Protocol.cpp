@@ -92,6 +92,9 @@ namespace portal
                 // Remove the data from buffer
                 buffer.erase(buffer.begin(), buffer.begin() + sizeof(PortalFrame) + frame.payloadSize);
 
+                // Attempt to parse another packet
+                processData(nullptr, 0);
+
             } else {
 
                 // We haven't got the data for the packet just yet, so wait for next time!
