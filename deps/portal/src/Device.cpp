@@ -73,7 +73,7 @@ namespace portal
         return _device.product_id;
     }
 
-    int Device::connect(uint16_t port, std::shared_ptr<ChannelDelegate> newChannelDelegate)
+    int Device::connect(uint16_t port, std::shared_ptr<ChannelDelegate> newChannelDelegate, int attempts)
     {
         int retval = 0;
         int conn = usbmuxd_connect(_device.handle, port);
@@ -83,6 +83,11 @@ namespace portal
             connectedChannel = std::shared_ptr<Channel>(new Channel(port, conn));
             connectedChannel->configureProtocolDelegate();
             connectedChannel->setDelegate(newChannelDelegate);
+        } else {
+
+            if (attempts > 0) {
+                connect(port, newChannelDelegate, attempts - 1);
+            }
         }
 
         return retval;

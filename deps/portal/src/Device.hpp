@@ -100,7 +100,7 @@ namespace portal
          */
         uint16_t productID() const;
 
-        int connect(uint16_t port, std::shared_ptr<ChannelDelegate> channelDelegate);
+        int connect(uint16_t port, std::shared_ptr<ChannelDelegate> channelDelegate, int attempts);
 
         ~Device();
 
