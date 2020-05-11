@@ -40,6 +40,14 @@ void FFMpegVideoDecoder::Init()
 void FFMpegVideoDecoder::Flush()
 {
     // Clear the queue
+    while(this->mQueue.size() > 0) {
+        this->mQueue.remove();
+    }
+
+    mMutex.lock();
+    // Re-initialize the decoder
+    ffmpeg_decode_free(video_decoder);
+    mMutex.unlock();
 }
 
 void FFMpegVideoDecoder::Drain()
@@ -62,8 +70,8 @@ void FFMpegVideoDecoder::Input(std::vector<char> packet, int type, int tag)
 
 void FFMpegVideoDecoder::processPacketItem(PacketItem *packetItem)
 {
+    mMutex.lock();
     uint64_t cur_time = os_gettime_ns();
-
     if (!ffmpeg_decode_valid(video_decoder))
     {
         if (ffmpeg_decode_init(video_decoder, AV_CODEC_ID_H264) < 0)
@@ -85,6 +93,7 @@ void FFMpegVideoDecoder::processPacketItem(PacketItem *packetItem)
         if (!success)
         {
             blog(LOG_WARNING, "Error decoding video");
+            mMutex.unlock();
             return;
         }
 
@@ -94,6 +103,7 @@ void FFMpegVideoDecoder::processPacketItem(PacketItem *packetItem)
             obs_source_output_video(source, &video_frame);
         }
     }
+    mMutex.unlock();
 }
 
 void *FFMpegVideoDecoder::run() {
