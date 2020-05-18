@@ -68,5 +68,6 @@ private:
     obs_source_frame video_frame;
     
     Decoder video_decoder;
-    
+
+    std::mutex mMutex;
 };

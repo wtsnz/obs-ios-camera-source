@@ -43,7 +43,13 @@ void VideoToolboxDecoder::Init()
 
 void VideoToolboxDecoder::Flush()
 {
+    // Clear the queue
+    while(this->mQueue.size() > 0) {
+        this->mQueue.remove();
+    }
 
+    VTDecompressionSessionInvalidate(mSession);
+    mSession = NULL;
 }
 
 void VideoToolboxDecoder::Drain()

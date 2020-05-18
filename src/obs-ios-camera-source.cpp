@@ -141,6 +141,12 @@ public:
 
         blog(LOG_INFO, "Connecting to device");
 
+        // flush the decoders 
+        ffmpegVideoDecoder.Flush();
+#ifdef __APPLE__
+        videoToolboxVideoDecoder.Flush();
+#endif
+
         // Find device
         auto devices = portal.getDevices();
         deviceUUID = std::string(uuid);
