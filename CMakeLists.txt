@@ -118,13 +118,16 @@ target_link_libraries(libplist
 
 #------- libusbmuxd
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DPACKAGE_STRING=\\\"obs-ios-camera\\\"")
+
 set(libusbmuxd_HEADERS
 	deps/libusbmuxd/common/collection.h
 	deps/libusbmuxd/common/socket.h
-	deps/libusbmuxd/src/msc_config.h
+	# deps/libusbmuxd/src/msc_config.h
 )
 
 set(libusbmuxd_SOURCES
+	deps/libusbmuxd/common/thread.c
 	deps/libusbmuxd/common/collection.c
 	deps/libusbmuxd/common/socket.c
 	deps/libusbmuxd/src/libusbmuxd.c
@@ -358,7 +361,7 @@ endif()
 if(APPLE)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -fvisibility=default")
 	set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unused-function -Werror-implicit-function-declaration -Wno-missing-field-initializers ${CMAKE_CXX_FLAGS} -fno-strict-aliasing")
-	set(CMAKE_C_FLAGS "-Wall -Wextra -Wno-unused-function -Werror-implicit-function-declaration -Wno-missing-braces -Wno-missing-field-initializers ${CMAKE_C_FLAGS} -std=gnu99 -fno-strict-aliasing")
+	set(CMAKE_C_FLAGS "-Wall -Wextra -Wno-unused-function -Werror-implicit-function-declaration -Wno-missing-braces -Wno-missing-field-initializers ${CMAKE_C_FLAGS} -std=gnu99 -fno-strict-aliasing -DHAVE_STPNCPY=1")
 	
 	set_target_properties(obs-ios-camera-source PROPERTIES PREFIX "")
 	target_link_libraries(obs-ios-camera-source "${OBS_FRONTEND_LIB}"

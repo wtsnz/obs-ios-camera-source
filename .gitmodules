@@ -1,0 +1,3 @@
+[submodule "deps/libusbmuxd"]
+	path = deps/libusbmuxd
+	url = https://github.com/libimobiledevice/libusbmuxd.git
