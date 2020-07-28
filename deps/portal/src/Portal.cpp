@@ -72,7 +72,7 @@ namespace portal
         portal_log("PORTAL (%p): Connecting to device: %s (%s)\n", this, device->getProductId().c_str(), device->uuid().c_str());
 
         // Connect to the device with the channel delegate.
-        device->connect(2345, shared_from_this(), 600);
+        device->connect(2345, shared_from_this(), 1200);
     }
 
     void Portal::removeDisconnectedDevices()
