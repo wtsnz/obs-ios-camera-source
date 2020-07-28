@@ -73,11 +73,12 @@ namespace portal
         return _device.product_id;
     }
 
-    int Device::connect(uint16_t port, std::shared_ptr<ChannelDelegate> newChannelDelegate, int attempts)
+    int Device::connect(uint16_t port, std::shared_ptr<ChannelDelegate> newChannelDelegate, int connectTimeoutMs)
     {
         int retval = 0;
+        auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(connectTimeoutMs);
 
-        while (attempts-- > 0) {
+        while (std::chrono::steady_clock::now() < deadline) {
             int conn = usbmuxd_connect(_device.handle, port);
 
             if (conn > 0)
