@@ -92,7 +92,7 @@ public:
             return item;
         } else {
             lock.unlock();
-            printf("No item to remove. item count: %d\n", this->size());
+            // printf("No item to remove. item count: %d\n", this->size());
             return NULL;
         }
         
