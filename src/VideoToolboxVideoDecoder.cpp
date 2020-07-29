@@ -43,6 +43,8 @@ void VideoToolboxDecoder::Init()
 
 void VideoToolboxDecoder::Flush()
 {
+    std::lock_guard<std::mutex> lock (mMutex);
+
     // Clear the queue
     while(this->mQueue.size() > 0) {
         this->mQueue.remove();
@@ -59,6 +61,8 @@ void VideoToolboxDecoder::Drain()
 
 void VideoToolboxDecoder::Shutdown()
 {
+    std::lock_guard<std::mutex> lock (mMutex);
+
     mQueue.stop();
 
     if (mSession != NULL) {
@@ -95,6 +99,8 @@ void VideoToolboxDecoder::processPacketItem(PacketItem *packetItem)
     if (frameSize < 3) {
         return;
     }
+
+    std::lock_guard<std::mutex> lock (mMutex);
 
     int naluType = (packet[4] & 0x1F);
 
@@ -252,15 +258,17 @@ void VideoToolboxDecoder::processPacketItem(PacketItem *packetItem)
                                   &sampleSize,
                                   &sampleBuffer);
 
-    VTDecodeFrameFlags flags = 0;
-    VTDecodeInfoFlags flagOut;
+    if (sampleBuffer != NULL) {
+        VTDecodeFrameFlags flags = 0;
+        VTDecodeInfoFlags flagOut;
 
-    auto now = os_gettime_ns();
+        auto now = os_gettime_ns();
 
-    VTDecompressionSessionDecodeFrame(mSession, sampleBuffer, flags,
-                                      (void*)now, &flagOut);
+        VTDecompressionSessionDecodeFrame(mSession, sampleBuffer, flags,
+                                          (void*)now, &flagOut);
 
-    CFRelease(sampleBuffer);
+        CFRelease(sampleBuffer);
+    }
 }
 
 
