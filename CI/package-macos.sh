@@ -21,12 +21,9 @@ FILENAME_UNSIGNED="obs-ios-camera-source-$VERSION-Unsigned.pkg"
 FILENAME="obs-ios-camera-source-$VERSION.pkg"
 
 echo "-- Modifying obs-ios-camera-source.so"
-install_name_tool \
-	-change /usr/local/opt/ffmpeg/lib/libavcodec.58.dylib @rpath/libavcodec.58.dylib \
-	-change /usr/local/opt/ffmpeg/lib/libavutil.56.dylib @rpath/libavutil.56.dylib \
-	-change /tmp/obsdeps/bin/libavcodec.58.dylib @rpath/libavcodec.58.dylib \
-	-change /tmp/obsdeps/bin/libavutil.56.dylib @rpath/libavutil.56.dylib \
-	./build/obs-ios-camera-source.so
+for lib in $(otool -L ./build/obs-ios-camera-source.so | awk '$1 ~ /^\// && $1 ~ /(libav.*)$/ { print $1 }'); do
+	install_name_tool -change "$lib" "@rpath/$(basename "$lib")" ./build/obs-ios-camera-source.so
+done
 
 echo "-- Dependencies for obs-ios-camera-source"
 otool -L ./build/obs-ios-camera-source.so
