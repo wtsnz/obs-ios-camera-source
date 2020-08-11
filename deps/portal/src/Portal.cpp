@@ -61,11 +61,7 @@ namespace portal
     void Portal::connectToDevice(Device::shared_ptr device)
     {
         // Disconnect to previous device
-        if (_device) {
-            portal_log("%s: Disconnecting from old device \n", __func__);
-            _device->disconnect();
-            _device = nullptr;
-        }
+        disconnectDevice();
 
         _device = device;
 
@@ -73,6 +69,16 @@ namespace portal
 
         // Connect to the device with the channel delegate.
         device->connect(2345, shared_from_this(), 2000);
+    }
+
+    void Portal::disconnectDevice()
+    {
+        // Disconnect to previous device
+        if (_device) {
+            portal_log("%s: Disconnecting from old device\n", __func__);
+            _device->disconnect();
+            _device = nullptr;
+        }
     }
 
     void Portal::removeDisconnectedDevices()

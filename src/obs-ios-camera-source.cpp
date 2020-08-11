@@ -21,6 +21,9 @@
 #include <Portal.hpp>
 #include <usbmuxd.h>
 #include <obs-avc.h>
+#include <mutex>
+#include <thread>
+#include <condition_variable>
 
 #include "FFMpegVideoDecoder.h"
 #include "FFMpegAudioDecoder.h"
@@ -44,12 +47,18 @@ public:
     obs_source_t *source;
     obs_data_t *settings;
 
-    bool active = false;
+    std::atomic_bool active = false;
     obs_source_frame frame;
     std::string deviceUUID;
 
     std::shared_ptr<portal::Portal> sharedPortal;
     portal::Portal portal;
+
+    std::atomic_bool stopping =  false;
+    std::thread connect_thread;
+    std::mutex mutex;
+    std::condition_variable condition_variable;
+    std::atomic_bool force_reconnect = false;
 
     VideoDecoder *videoDecoder;
 #ifdef __APPLE__
@@ -91,21 +100,62 @@ public:
 
         loadSettings(settings);
         active = true;
+        connect_thread = std::thread(&IOSCameraInput::connect_worker, this);
     }
 
-    inline ~IOSCameraInput()
+    ~IOSCameraInput()
     {
+        portal.stopListeningForDevices();
+        stopping = true;
+        signalConnect();
+        connect_thread.join();
+    }
 
+    void connect_worker() {
+        bool last_active = active;
+        std::string last_device_uuid;
+
+        while (!stopping) {
+            std::unique_lock<std::mutex> lock(mutex);
+            blog(LOG_DEBUG, "connect_worker: Running check");
+
+            if (force_reconnect || !active) {
+                blog(LOG_DEBUG, "connect_worker: Disconnecting");
+                disconnectFromDevice();
+                force_reconnect = false;
+            }
+
+            if (active) {
+                blog(LOG_DEBUG, "connect_worker: Connecting");
+                connectToDevice();
+            }
+
+            if (last_active == active && last_device_uuid == deviceUUID) {
+                blog(LOG_DEBUG, "connect_worker: Waiting");
+                condition_variable.wait_for(lock, std::chrono::seconds(1));
+            }
+
+            last_active = active;
+            last_device_uuid = deviceUUID;
+
+            lock.unlock();
+        }
+    }
+
+    void signalConnect() {
+        condition_variable.notify_all();
     }
 
     void activate() {
         blog(LOG_INFO, "Activating");
         active = true;
+        signalConnect();
     }
 
     void deactivate() {
         blog(LOG_INFO, "Deactivating");
         active = false;
+        signalConnect();
     }
 
     void loadSettings(obs_data_t *settings) {
@@ -113,7 +163,19 @@ public:
 
         blog(LOG_INFO, "Loaded Settings: Connecting to device");
 
-        connectToDevice(device_uuid, false);
+        setDeviceUUID(device_uuid);
+    }
+
+    void setDeviceUUID(std::string uuid) {
+        std::scoped_lock lock(mutex);
+
+        if (uuid == SETTING_DEVICE_UUID_NONE_VALUE) {
+            deviceUUID = "";
+        } else {
+            deviceUUID = uuid;
+        }
+
+        signalConnect();
     }
 
     void reconnectToDevice()
@@ -122,24 +184,12 @@ public:
             return;
         }
 
-        connectToDevice(deviceUUID, true);
+        force_reconnect = true;
+        signalConnect();
     }
 
-    void connectToDevice(std::string uuid, bool force) {
-
-        if (portal._device) {
-            // Make sure that we're not already connected to the device
-            if (force == false && portal._device->uuid().compare(uuid) == 0 && portal._device->isConnected()) {
-                blog(LOG_DEBUG, "Already connected to the device. Skipping.");
-                return;
-            } else {
-                // Disconnect from from the old device
-                portal._device->disconnect();
-                portal._device = nullptr;
-            }
-        }
-
-        blog(LOG_INFO, "Connecting to device");
+    void disconnectFromDevice() {
+        portal.disconnectDevice();
 
         // flush the decoders 
         ffmpegVideoDecoder.Flush();
@@ -147,22 +197,39 @@ public:
         videoToolboxVideoDecoder.Flush();
 #endif
 
+        // Clear the video frame when a setting changes
+        obs_source_output_video(source, NULL);
+    }
+
+    bool isConnectedTo(std::string uuid) {
+        return (portal._device && portal._device->isConnected() && portal._device->uuid().compare(uuid) == 0);
+    }
+
+    void connectToDevice() {
+        if (deviceUUID.size() == 0) {
+            return;
+        }
+
+        if (isConnectedTo(deviceUUID)) {
+            blog(LOG_DEBUG, "Already connected to the device. Skipping.");
+            return;
+        }
+
+        disconnectFromDevice();
+
         // Find device
         auto devices = portal.getDevices();
-        deviceUUID = std::string(uuid);
 
-        int index = 0;
-        std::for_each(devices.begin(), devices.end(), [this, uuid, &index](std::map<int, portal::Device::shared_ptr>::value_type &deviceMap) {
-            // Add the device name to the list
-            auto _uuid = deviceMap.second->uuid();
-
-            if (_uuid.compare(uuid) == 0) {
-                blog(LOG_DEBUG, "comparing \n%s\n%s\n", _uuid.c_str(), uuid.c_str());
-                portal.connectToDevice(deviceMap.second);
-            }
-
-            index++;
+        auto deviceElement = std::find_if(devices.begin(), devices.end(), [this](const auto &element) {
+            return element.second->uuid().compare(deviceUUID) == 0;
         });
+
+        if (deviceElement != devices.end()) {
+            blog(LOG_INFO, "Connecting to device %s", deviceUUID.c_str());
+            portal.connectToDevice(deviceElement->second);
+        } else {
+            blog(LOG_INFO, "No device found to connect for %s", deviceUUID.c_str());
+        }
     }
 
     void portalDeviceDidReceivePacket(std::vector<char> packet, int type, int tag)
@@ -192,6 +259,10 @@ public:
 
     void portalDidUpdateDeviceList(std::map<int, portal::Device::shared_ptr> deviceList)
     {
+        if (deviceUUID.size() != 0) {
+            return;
+        }
+
         // Update OBS Settings
         blog(LOG_INFO, "Updated device list");
 
@@ -206,7 +277,6 @@ public:
         /// Due to this, if there are multiple devices, we won't do anything and will let
         /// the user configure the instance of the plugin.
         if (deviceList.size() == 1) {
-
             for (const auto& [index, device] : deviceList) {
                 auto uuid = device.get()->uuid();
 
@@ -220,10 +290,9 @@ public:
                     obs_data_set_string(this->settings, SETTING_DEVICE_UUID, uuid.c_str());
 
                     // Connect to the device
-                    connectToDevice(uuid, false);
+                    setDeviceUUID(uuid);
                 }
             }
-
         } else {
             // User will have to configure the plugin manually when more than one device is plugged in
             // due to the fact that multiple instances of the plugin can't subscribe to device events...
@@ -372,12 +441,9 @@ static void UpdateIOSCameraInput(void *data, obs_data_t *settings)
 {
     IOSCameraInput *input = reinterpret_cast<IOSCameraInput*>(data);
 
-    // Clear the video frame when a setting changes
-    obs_source_output_video(input->source, NULL);
-
     // Connect to the device
     auto uuid = obs_data_get_string(settings, SETTING_DEVICE_UUID);
-    input->connectToDevice(uuid, false);
+    input->setDeviceUUID(uuid);
 
     const bool is_unbuffered =
         (obs_data_get_int(settings, SETTING_PROP_LATENCY) == SETTING_PROP_LATENCY_LOW);

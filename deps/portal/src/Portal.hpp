@@ -56,6 +56,7 @@ namespace portal
         bool isListening();
 
         void connectToDevice(Device::shared_ptr device);
+        void disconnectDevice();
 
         void reloadDeviceList();
 
