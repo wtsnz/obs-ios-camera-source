@@ -41,6 +41,8 @@
 
 #define SETTING_PROP_HARDWARE_DECODER "setting_use_hw_decoder"
 
+#define SETTING_PROP_DISCONNECT_ON_INACTIVE "setting_disconnect_on_inactive"
+
 class IOSCameraInput: public portal::PortalDelegate
 {
 public:
@@ -48,6 +50,7 @@ public:
     obs_data_t *settings;
 
     std::atomic_bool active = false;
+    std::atomic_bool disconnectOnInactive = false;
     obs_source_frame frame;
     std::string deviceUUID;
 
@@ -114,29 +117,33 @@ public:
     void connect_worker() {
         bool last_active = active;
         std::string last_device_uuid;
+        bool last_disconnect_on_inactive = disconnectOnInactive;
 
         while (!stopping) {
             std::unique_lock<std::mutex> lock(mutex);
             blog(LOG_DEBUG, "connect_worker: Running check");
 
-            if (force_reconnect || !active) {
+            bool should_disconnect = disconnectOnInactive && !active;
+
+            if (force_reconnect || should_disconnect) {
                 blog(LOG_DEBUG, "connect_worker: Disconnecting");
                 disconnectFromDevice();
                 force_reconnect = false;
             }
 
-            if (active) {
+            if (active || !disconnectOnInactive) {
                 blog(LOG_DEBUG, "connect_worker: Connecting");
                 connectToDevice();
             }
 
-            if (last_active == active && last_device_uuid == deviceUUID) {
+            if (last_active == active && last_device_uuid == deviceUUID && last_disconnect_on_inactive == disconnectOnInactive) {
                 blog(LOG_DEBUG, "connect_worker: Waiting");
                 condition_variable.wait_for(lock, std::chrono::seconds(1));
             }
 
             last_active = active;
             last_device_uuid = deviceUUID;
+            last_disconnect_on_inactive = disconnectOnInactive;
 
             lock.unlock();
         }
@@ -418,6 +425,9 @@ static obs_properties_t *GetIOSCameraProperties(void *data)
         obs_module_text("OBSIOSCamera.Settings.UseHardwareDecoder"));
 #endif
 
+    obs_properties_add_bool(ppts, SETTING_PROP_DISCONNECT_ON_INACTIVE,
+        obs_module_text("OBSIOSCamera.Settings.DisconnectOnInactive"));
+
     return ppts;
 }
 
@@ -429,6 +439,7 @@ static void GetIOSCameraDefaults(obs_data_t *settings)
 #ifdef __APPLE__
     obs_data_set_default_bool(settings, SETTING_PROP_HARDWARE_DECODER, false);
 #endif
+    obs_data_set_default_bool(settings, SETTING_PROP_DISCONNECT_ON_INACTIVE, false);
 }
 
 static void SaveIOSCameraInput(void *data, obs_data_t *settings)
@@ -459,6 +470,7 @@ static void UpdateIOSCameraInput(void *data, obs_data_t *settings)
     }
 #endif
 
+    input->disconnectOnInactive = obs_data_get_bool(settings, SETTING_PROP_DISCONNECT_ON_INACTIVE);
 }
 
 void RegisterIOSCameraSource()
