@@ -35,7 +35,7 @@ namespace portal
     {
         running = false;
         WaitForInternalThreadToExit();
-        portal_log("%s: Deallocating\n", __func__);
+        portal_log("%s: %d: Deallocating\n", __func__, conn);
     }
 
     void Channel::close()
@@ -89,7 +89,7 @@ namespace portal
             }
             else
             {
-                portal_log("There was an error receiving data");
+                portal_log("%d: There was an error receiving data\n", conn);
                 running = false;
             }
         }

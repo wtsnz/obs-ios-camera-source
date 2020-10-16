@@ -33,7 +33,7 @@ namespace portal
     _productId(std::to_string(_device.product_id))
     {
         s_devices[_uuid].push_back(this);
-        portal_log("Added %p to device list", this);
+        portal_log("Added %p to device list\n", this);
     }
 
     Device::Device(const Device &other) : _connected(other._connected),
@@ -41,7 +41,7 @@ namespace portal
     _uuid(other._uuid)
     {
         s_devices[_uuid].push_back(this);
-        portal_log("Added %p to device list (copy)", this);
+        portal_log("Added %p to device list (copy)\n", this);
     }
 
     Device &Device::operator=(const Device &rhs)
@@ -127,7 +127,7 @@ namespace portal
     {
         disconnect();
         removeFromDeviceList();
-        portal_log("Removed %p from device list", this);
+        portal_log("Removed %p from device list\n", this);
     }
 
     std::ostream &operator<<(std::ostream &os, const Device &v)
