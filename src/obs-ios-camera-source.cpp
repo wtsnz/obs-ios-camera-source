@@ -232,7 +232,7 @@ public:
         });
 
         if (deviceElement != devices.end()) {
-            blog(LOG_INFO, "Connecting to device %s", deviceUUID.c_str());
+            blog(LOG_DEBUG, "Connecting to device %s", deviceUUID.c_str());
             portal.connectToDevice(deviceElement->second);
         } else {
             blog(LOG_INFO, "No device found to connect for %s", deviceUUID.c_str());
