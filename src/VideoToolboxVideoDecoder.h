@@ -65,6 +65,7 @@ private:
     std::vector<char> ppsData;
     
     WorkQueue<PacketItem *> mQueue;
+    std::mutex mMutex;
     
     obs_source_frame frame;
 };
