@@ -83,7 +83,7 @@ void FFMpegVideoDecoder::processPacketItem(PacketItem *packetItem)
 
     auto packet = packetItem->getPacket();
     unsigned char *data = (unsigned char *)packet.data();
-    long long ts = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    long long ts = cur_time;
 
     if (packetItem->getType() == 101) {
 
