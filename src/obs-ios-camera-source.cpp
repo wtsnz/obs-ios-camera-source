@@ -123,7 +123,7 @@ public:
             std::unique_lock<std::mutex> lock(mutex);
             blog(LOG_DEBUG, "connect_worker: Running check");
 
-            bool should_disconnect = disconnectOnInactive && !active;
+            bool should_disconnect = disconnectOnInactive && !active || deviceUUID == "";
 
             if (force_reconnect || should_disconnect) {
                 blog(LOG_DEBUG, "connect_worker: Disconnecting");
