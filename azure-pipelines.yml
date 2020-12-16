@@ -117,7 +117,7 @@ jobs:
       - script: ./CI/build-macos.sh
         displayName: 'Build obs-ios-camera-source'
   
-      - task: InstallAppleCertificate@1
+      - task: InstallAppleCertificate@2
         displayName: 'Install release signing certificates'
         condition: eq(variables['isReleaseMode'], true)
         inputs:
