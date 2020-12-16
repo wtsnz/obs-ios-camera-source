@@ -22,7 +22,7 @@
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("obs-ios-camera-plugin", "en-US")
 
-#define IOS_CAMERA_PLUGIN_VERSION "2.6.1"
+#define IOS_CAMERA_PLUGIN_VERSION "2.7.0"
 
 extern void RegisterIOSCameraSource();
 
