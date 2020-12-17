@@ -7,8 +7,7 @@ obs-ios-camera-source
 ==============
 Use your iPhone camera as a video source in OBS Studio and stream high quality video from your iPhone's camera over USB.
 
-[![Build status](https://ci.appveyor.com/api/projects/status/ya6xt30mxfnvplna?svg=true)](https://ci.appveyor.com/project/wtsnz/obs-ios-camera-source)
-[![Build Status](https://travis-ci.org/wtsnz/obs-ios-camera-source.svg?branch=master)](https://travis-ci.org/wtsnz/obs-ios-camera-source)
+[![Build Status](https://dev.azure.com/wtsnz/Camera%20for%20OBS%20Plugin/_apis/build/status/wtsnz.obs-ios-camera-source?branchName=refs%2Ftags%2Fv2.7.0)](https://dev.azure.com/wtsnz/Camera%20for%20OBS%20Plugin/_build/latest?definitionId=1&branchName=refs%2Ftags%2Fv2.7.0)
 
 To use this you use the [accompanying iOS app](https://will.townsend.io/products/obs-iphone/) to begin streaming in OBS.
 
