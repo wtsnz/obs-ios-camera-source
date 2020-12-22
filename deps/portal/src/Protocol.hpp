@@ -63,7 +63,7 @@ class SimpleDataPacketProtocol
 		    return shared_from_this();
 	    }
 
-	    std::vector<DataPacket> SimpleDataPacketProtocol::processData(std::vector<char> data);
+	    std::vector<DataPacket> processData(std::vector<char> data);
 
 	    void reset();
 
