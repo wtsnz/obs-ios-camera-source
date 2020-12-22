@@ -250,7 +250,10 @@ void IOSCameraInput::connectToDevice()
 		return;
 	}
 
-	auto selectedUUID = state.selectedDeviceUUID.value();
+	// https://stackoverflow.com/questions/44217316/how-do-i-use-stdoptional-in-c
+	// Apple compiler hasn't implemented std::optional.value() in < macos 10.14,
+	// work around this by fetching the value by * method.
+	std::string selectedUUID = *state.selectedDeviceUUID;
 
 	std::optional<MobileCameraDevice> selectedDevice = std::nullopt;
 
