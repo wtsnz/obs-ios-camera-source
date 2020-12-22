@@ -45,7 +45,6 @@ Device &Device::operator=(const Device &rhs)
 	this->_device = rhs._device;
 	this->_uuid = rhs._uuid;
 	this->_productId = rhs._productId;
-	this->usbmuxdHandle() == rhs.usbmuxdHandle();
 
 	return *this;
 }
