@@ -186,12 +186,16 @@ void IOSCameraInput::activate()
 {
 	blog(LOG_INFO, "Activating");
 	active = true;
+
+	connectToDevice();
 }
 
 void IOSCameraInput::deactivate()
 {
 	blog(LOG_INFO, "Deactivating");
 	active = false;
+
+	connectToDevice();
 }
 
 void IOSCameraInput::loadSettings(obs_data_t *settings)
@@ -274,7 +278,13 @@ void IOSCameraInput::connectToDevice()
 		if (uuid == selectedUUID) {
 			blog(LOG_DEBUG, "Starting connection controller");
 			if (connectionController != nullptr) {
-				connectionController->start();
+
+				if (disconnectOnInactive == true &&
+				    active == false) {
+				} else {
+					connectionController->start();
+				}
+				
 			}
 		}
 	}
