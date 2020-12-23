@@ -493,5 +493,6 @@ void RegisterIOSCameraSource()
 	info.get_properties = GetIOSCameraProperties;
 	info.save = SaveIOSCameraInput;
 	info.update = UpdateIOSCameraInput;
+	info.icon_type = OBS_ICON_TYPE_CAMERA;
 	obs_register_source(&info);
 }
