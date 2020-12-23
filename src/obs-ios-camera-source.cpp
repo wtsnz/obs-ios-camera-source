@@ -243,6 +243,8 @@ void IOSCameraInput::connectToDevice()
 	blog(LOG_DEBUG, "Connecting to device: %s",
 	     state.selectedDeviceUUID.value_or("none").c_str());
 
+	// If there is no currently selected device, disconnect from all
+	// connection controllers
 	if (!state.selectedDeviceUUID.has_value()) {
 		for (const auto &[uuid, connectionController] :
 		     connectionControllers) {
@@ -262,32 +264,22 @@ void IOSCameraInput::connectToDevice()
 	// work around this by fetching the value by * method.
 	std::string selectedUUID = *state.selectedDeviceUUID;
 
-	std::optional<MobileCameraDevice> selectedDevice = std::nullopt;
-
-	for (const auto &device : state.devices) {
-		if (device.uuid == selectedUUID) {
-			selectedDevice = device;
-			break;
-		}
-	}
-
+	// Disconnect all connection controllers
 	for (const auto &[uuid, connectionController] : connectionControllers) {
 		if (connectionController != nullptr) {
 			connectionController->disconnect();
 		}
 	}
 
-	for (const auto &[uuid, connectionController] : connectionControllers) {
-		if (uuid == selectedUUID) {
-			blog(LOG_DEBUG, "Starting connection controller");
-			if (connectionController != nullptr) {
+	auto shouldConnect = !(disconnectOnInactive == true && active == false);
 
-				if (disconnectOnInactive == true &&
-				    active == false) {
-				} else {
-					connectionController->start();
-				}
-				
+	// Then connect to the selected device if the plugin is active, or inactive and connected on inactive.
+	for (const auto &[uuid, connectionController] : connectionControllers) {
+		if (connectionController != nullptr) {
+			if (uuid == selectedUUID && shouldConnect) {
+				blog(LOG_DEBUG,
+				     "Starting connection controller");
+				connectionController->start();
 			}
 		}
 	}
