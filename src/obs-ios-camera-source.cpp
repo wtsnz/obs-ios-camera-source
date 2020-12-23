@@ -47,12 +47,9 @@ IOSCameraInput::IOSCameraInput(obs_source_t *source_, obs_data_t *settings)
 
 	videoDecoder = &ffmpegVideoDecoder;
 
+	state = State();
 	active = true;
 	loadSettings(settings);
-
-	// new
-
-	state = State();
 
 	deviceManager.onDeviceManagerDidUpdateDeviceListCallback =
 		[this](auto devices) {
@@ -119,6 +116,8 @@ void IOSCameraInput::deviceManagerDidUpdateDeviceList(
 	} else {
 		// User will have to configure the plugin manually when more than one device is plugged in
 		// due to the fact that multiple instances of the plugin can't subscribe to device events...
+
+		connectToDevice();
 	}
 }
 
@@ -204,6 +203,7 @@ void IOSCameraInput::loadSettings(obs_data_t *settings)
 		settings, SETTING_PROP_DISCONNECT_ON_INACTIVE);
 
 	auto device_uuid = obs_data_get_string(settings, SETTING_DEVICE_UUID);
+	state.selectedDeviceUUID = device_uuid;
 
 	blog(LOG_INFO, "Loaded Settings");
 
