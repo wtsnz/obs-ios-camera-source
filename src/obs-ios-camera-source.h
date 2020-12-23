@@ -52,7 +52,7 @@ public:
 	void loadSettings(obs_data_t *settings);
 	void setDeviceUUID(std::string uuid);
 	void reconnectToDevice();
-	void disconnectFromDevice();
+	void resetDecoder();
 	void connectToDevice();
 
 	struct MobileCameraDevice {
@@ -63,6 +63,7 @@ public:
 	struct State {
 		std::vector<MobileCameraDevice> devices;
 		std::optional<std::string> selectedDeviceUUID;
+		std::optional<std::string> lastSelectedDeviceUUID;
 	};
 
 	State state;

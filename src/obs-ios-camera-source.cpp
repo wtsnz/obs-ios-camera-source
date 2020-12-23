@@ -47,8 +47,8 @@ IOSCameraInput::IOSCameraInput(obs_source_t *source_, obs_data_t *settings)
 
 	videoDecoder = &ffmpegVideoDecoder;
 
-	loadSettings(settings);
 	active = true;
+	loadSettings(settings);
 
 	// new
 
@@ -212,6 +212,8 @@ void IOSCameraInput::loadSettings(obs_data_t *settings)
 
 void IOSCameraInput::setDeviceUUID(std::string uuid)
 {
+	state.lastSelectedDeviceUUID = state.selectedDeviceUUID;
+
 	if (uuid == SETTING_DEVICE_UUID_NONE_VALUE) {
 		state.selectedDeviceUUID = std::nullopt;
 	} else {
@@ -226,7 +228,7 @@ void IOSCameraInput::reconnectToDevice()
 	connectToDevice();
 }
 
-void IOSCameraInput::disconnectFromDevice()
+void IOSCameraInput::resetDecoder()
 {
 	// flush the decoders
 	ffmpegVideoDecoder.Flush();
@@ -243,6 +245,9 @@ void IOSCameraInput::connectToDevice()
 	blog(LOG_DEBUG, "Connecting to device: %s",
 	     state.selectedDeviceUUID.value_or("none").c_str());
 
+	auto isConnectingToDifferentDevice = state.lastSelectedDeviceUUID !=
+					     state.selectedDeviceUUID;
+
 	// If there is no currently selected device, disconnect from all
 	// connection controllers
 	if (!state.selectedDeviceUUID.has_value()) {
@@ -254,8 +259,7 @@ void IOSCameraInput::connectToDevice()
 		}
 
 		// Clear the video frame when a setting changes
-		videoDecoder->Flush();
-		obs_source_output_video(source, NULL);
+		resetDecoder();
 		return;
 	}
 
@@ -269,6 +273,10 @@ void IOSCameraInput::connectToDevice()
 		if (connectionController != nullptr) {
 			connectionController->disconnect();
 		}
+	}
+
+	if (isConnectingToDifferentDevice) {
+		resetDecoder();
 	}
 
 	auto shouldConnect = !(disconnectOnInactive == true && active == false);
