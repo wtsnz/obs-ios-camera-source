@@ -200,6 +200,9 @@ void IOSCameraInput::deactivate()
 
 void IOSCameraInput::loadSettings(obs_data_t *settings)
 {
+	disconnectOnInactive = obs_data_get_bool(
+		settings, SETTING_PROP_DISCONNECT_ON_INACTIVE);
+
 	auto device_uuid = obs_data_get_string(settings, SETTING_DEVICE_UUID);
 
 	blog(LOG_INFO, "Loaded Settings");
