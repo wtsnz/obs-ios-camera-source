@@ -79,7 +79,6 @@ public:
 
 	std::atomic_bool active = false;
 	std::atomic_bool disconnectOnInactive = false;
-	obs_source_frame frame;
 
 	VideoDecoder *videoDecoder;
 #ifdef __APPLE__

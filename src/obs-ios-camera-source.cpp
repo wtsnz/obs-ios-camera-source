@@ -32,8 +32,6 @@ IOSCameraInput::IOSCameraInput(obs_source_t *source_, obs_data_t *settings)
 {
 	blog(LOG_INFO, "Creating instance of plugin!");
 
-	memset(&frame, 0, sizeof(frame));
-
 #ifdef __APPLE__
 	videoToolboxVideoDecoder.source = source_;
 	videoToolboxVideoDecoder.Init();
