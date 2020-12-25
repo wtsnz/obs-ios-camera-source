@@ -278,14 +278,14 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode,
 
         range = frame->full_range ? VIDEO_RANGE_FULL : VIDEO_RANGE_PARTIAL;
 
-        success = video_format_get_parameters(VIDEO_CS_601,
+        success = video_format_get_parameters(VIDEO_CS_709,
                                               range, frame->color_matrix,
                                               frame->color_range_min, frame->color_range_max);
         if (!success)
         {
             blog(LOG_ERROR, "Failed to get video format "
                  "parameters for video format %u",
-                 VIDEO_CS_601);
+                 VIDEO_CS_709);
             return false;
         }
     }
