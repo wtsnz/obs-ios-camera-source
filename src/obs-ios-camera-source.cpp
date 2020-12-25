@@ -362,6 +362,8 @@ static const char *GetIOSCameraInputName(void *)
     return TEXT_INPUT_NAME;
 }
 
+static void UpdateIOSCameraInput(void *data, obs_data_t *settings);
+
 static void *CreateIOSCameraInput(obs_data_t *settings, obs_source_t *source)
 {
     IOSCameraInput *cameraInput = nullptr;
@@ -369,6 +371,7 @@ static void *CreateIOSCameraInput(obs_data_t *settings, obs_source_t *source)
     try
     {
         cameraInput = new IOSCameraInput(source, settings);
+        UpdateIOSCameraInput(cameraInput, settings);
     }
     catch (const char *error)
     {
