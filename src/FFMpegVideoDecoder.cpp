@@ -68,6 +68,7 @@ void FFMpegVideoDecoder::Input(std::vector<char> packet, int type, int tag)
     this->mQueue.add(item);
 }
 
+static const char *ffmpeg_decode_video_name = "obs_camera_ffmpeg_decode_video";
 void FFMpegVideoDecoder::processPacketItem(PacketItem *packetItem)
 {
     mMutex.lock();
@@ -86,10 +87,13 @@ void FFMpegVideoDecoder::processPacketItem(PacketItem *packetItem)
     long long ts = cur_time;
 
     if (packetItem->getType() == 101) {
+        profile_start(ffmpeg_decode_video_name);
 
         bool got_output;
         bool success = ffmpeg_decode_video(video_decoder, data, packet.size(), &ts,
                                            &video_frame, &got_output);
+
+        profile_end(ffmpeg_decode_video_name);
         if (!success)
         {
             blog(LOG_WARNING, "Error decoding video");
@@ -120,15 +124,18 @@ void *FFMpegVideoDecoder::run() {
         // Check queue lengths
 
         const int queueSize = mQueue.size();
-        if (queueSize > 25) {
-            blog(LOG_WARNING, "Video Decoding queue overloaded. %d frames behind. Please use a lower quality setting.", queueSize);
+        if (queueSize > 5) {
+            blog(LOG_WARNING, "FFMpeg: Decoding queue overloaded. %d frames behind. Please use a lower quality setting.", queueSize);
 
-            if (queueSize > 25) {
-                while (mQueue.size() > 5) {
-                    mQueue.remove();
+            while (mQueue.size() > 0) {
+                PacketItem *item = (PacketItem *)mQueue.remove();
+                if (item != NULL) {
+                    blog(LOG_INFO, "FFMpeg: dropping packet type=%d tag=%d size=%d", item->getType(), item->getTag(), item->size());
+                    delete item;
                 }
             }
         }
     }
     return NULL;
 }
+

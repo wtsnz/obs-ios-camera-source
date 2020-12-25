@@ -116,7 +116,10 @@ void *FFMpegAudioDecoder::run() {
 
             if (queueSize > 25) {
                 while (mQueue.size() > 5) {
-                    mQueue.remove();
+                    PacketItem *item = (PacketItem *)mQueue.remove();
+                    if (item != NULL) {
+                        delete item;
+                    }
                 }
             }
         }
