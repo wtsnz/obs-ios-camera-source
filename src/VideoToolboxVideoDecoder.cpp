@@ -80,13 +80,29 @@ void *VideoToolboxDecoder::run() {
         PacketItem *item = (PacketItem *)mQueue.remove();
         if (item != NULL) {
             this->processPacketItem(item);
+            delete item;
         }
-        delete item;
+
+        // Check queue lengths
+
+        const int queueSize = mQueue.size();
+        if (queueSize > 5) {
+            blog(LOG_WARNING, "Video Toolbox: decoding queue overloaded. %d frames behind. Please use a lower quality setting.", queueSize);
+
+            while (mQueue.size() > 0) {
+                PacketItem *item = (PacketItem *)mQueue.remove();
+                if (item != NULL) {
+                    blog(LOG_INFO, "Video Toolbox: dropping packet type=%d tag=%d size=%d", item->getType(), item->getTag(), item->size());
+                    delete item;
+                }
+            }
+        }
     }
 
     return NULL;
 }
 
+static const char *video_toolbox_decode_video_name = "obs_camera_video_toolbox_decode_video";
 void VideoToolboxDecoder::processPacketItem(PacketItem *packetItem)
 {
     auto packet = packetItem->getPacket();
@@ -262,12 +278,16 @@ void VideoToolboxDecoder::processPacketItem(PacketItem *packetItem)
         VTDecodeFrameFlags flags = 0;
         VTDecodeInfoFlags flagOut;
 
+        profile_start(video_toolbox_decode_video_name);
+
         auto now = os_gettime_ns();
 
         VTDecompressionSessionDecodeFrame(mSession, sampleBuffer, flags,
                                           (void*)now, &flagOut);
 
         CFRelease(sampleBuffer);
+
+        profile_end(video_toolbox_decode_video_name);
     }
 }
 

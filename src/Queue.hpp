@@ -43,6 +43,10 @@ public:
     int getTag() {
         return mTag;
     }
+
+    int size() {
+        return mPacket.size();
+    }
 };
 
 template <typename T> class WorkQueue
