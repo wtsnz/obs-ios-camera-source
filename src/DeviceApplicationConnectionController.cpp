@@ -114,7 +114,11 @@ void DeviceApplicationConnectionController::worker_loop()
 			blog(LOG_INFO,
 			     "Device connection is already connected. Doing nothing.");
 			break;
-		}
+        case portal::DeviceConnection::State::Connecting:
+            blog(LOG_INFO,
+                 "Device connection is already connecting. Doing nothing.");
+                break;
+        }
 
 		worker_condition.wait_for(lock, std::chrono::seconds(1));
 		lock.unlock();
@@ -129,13 +133,16 @@ void DeviceApplicationConnectionController::connectionDidChangeState(
 	std::shared_ptr<portal::DeviceConnection> deviceConnection,
 	portal::DeviceConnection::State state)
 {
-
+    UNUSED_PARAMETER(deviceConnection);
+    UNUSED_PARAMETER(state);
 }
 
 void DeviceApplicationConnectionController::connectionDidRecieveData(
 	std::shared_ptr<portal::DeviceConnection> deviceConnection,
 	std::vector<char> data)
 {
+    UNUSED_PARAMETER(deviceConnection);
+
 	auto packets = protocol->processData(data);
 	std::for_each(packets.begin(), packets.end(),
 		      [this](auto packet) { this->processPacket(packet); });
@@ -144,4 +151,5 @@ void DeviceApplicationConnectionController::connectionDidRecieveData(
 void DeviceApplicationConnectionController::connectionDidFail(
 	std::shared_ptr<portal::DeviceConnection> deviceConnection)
 {
+    UNUSED_PARAMETER(deviceConnection);
 }

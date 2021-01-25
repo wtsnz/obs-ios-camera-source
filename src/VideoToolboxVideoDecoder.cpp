@@ -331,6 +331,9 @@ DecompressionSessionDecodeFrameCallback(void *decompressionOutputRefCon,
                                         CMTime presentationTimeStamp,
                                         CMTime presentationDuration)
 {
+    UNUSED_PARAMETER(sourceFrameRefCon);
+    UNUSED_PARAMETER(presentationTimeStamp);
+    UNUSED_PARAMETER(presentationDuration);
 
     VideoToolboxDecoder* decoder = static_cast<VideoToolboxDecoder*>(decompressionOutputRefCon);
 
@@ -380,6 +383,8 @@ void VideoToolboxDecoder::createDecompressionSession()
 
 bool VideoToolboxDecoder::update_frame(obs_source_t *capture, obs_source_frame *frame, CVImageBufferRef imageBufferRef, CMVideoFormatDescriptionRef formatDesc)
 {
+    UNUSED_PARAMETER(capture);
+    
     // blog(LOG_INFO, "Update frame");
     if (!formatDesc) {
         // blog(LOG_INFO, "No format");
