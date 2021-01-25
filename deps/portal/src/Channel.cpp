@@ -126,29 +126,22 @@ void Channel::InternalThreadEntry()
 		const uint32_t numberOfBytesToAskFor =
 			65536; // (1 << 16); // This is the value in DarkLighting
 		uint32_t numberOfBytesReceived = 0;
+		auto vector = std::vector<char>(numberOfBytesToAskFor);
 
-		char buffer[numberOfBytesToAskFor];
-
-		int ret = usbmuxd_recv_timeout(conn, (char *)&buffer,
+		int ret = usbmuxd_recv_timeout(conn, vector.data(),
 					       numberOfBytesToAskFor,
 					       &numberOfBytesReceived, 10);
 
 		if (ret == 0) {
-
 			if (getState() == State::Connecting) {
 				setState(State::Connected);
 			}
 
 			if (numberOfBytesReceived > 0) {
+				vector.resize(numberOfBytesReceived);
+
 				if (running) {
 					if (auto spt = delegate.lock()) {
-						// copy the char* bytes into the vector
-						auto vector =
-							std::vector<char>();
-						vector.insert(
-							vector.end(), buffer,
-							buffer +
-								numberOfBytesReceived);
 						spt->channelDidReceiveData(
 							vector);
 					}
