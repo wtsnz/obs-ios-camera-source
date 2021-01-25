@@ -25,4 +25,4 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #endif
 
 #define portal_log(format, ...) \
-    do { if (PORTAL_DEBUG_LOG_ENABLED) fprintf(stderr, "%s:%d:%s(): " format, __FILE__, __LINE__, __func__, ## __VA_ARGS__); } while (0)
+    do { if (PORTAL_DEBUG_LOG_ENABLED) fprintf(stdout, "%s:%d:%s(): " format, __FILE__, __LINE__, __func__, ## __VA_ARGS__); } while (0)

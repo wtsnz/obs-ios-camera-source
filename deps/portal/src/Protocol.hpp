@@ -1,6 +1,6 @@
 /*
  portal
- Copyright (C) 2018    Will Townsend <will@townsend.io>
+ Copyright (C) 2018 Will Townsend <will@townsend.io>
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -45,39 +45,32 @@ namespace portal
 
     } PortalFrame;
 
-    class SimpleDataPacketProtocolDelegate
-    {
+class SimpleDataPacketProtocol
+	    : public std::enable_shared_from_this<SimpleDataPacketProtocol> {
     public:
-        virtual void simpleDataPacketProtocolDelegateDidProcessPacket(std::vector<char> packet, int type, int tag) = 0;
-        virtual ~SimpleDataPacketProtocolDelegate(){};
-    };
+	    struct DataPacket {
+		    uint32_t version;
+		    uint32_t type;
+		    uint32_t tag;
+		    std::vector<char> data;
+	    };
 
-    class SimpleDataPacketProtocol: public std::enable_shared_from_this<SimpleDataPacketProtocol>
-    {
-    public:
-        SimpleDataPacketProtocol();
-        ~SimpleDataPacketProtocol();
+	    SimpleDataPacketProtocol();
+	    ~SimpleDataPacketProtocol();
 
-        std::shared_ptr<SimpleDataPacketProtocol> getptr()
-        {
-            return shared_from_this();
-        }
+	    std::shared_ptr<SimpleDataPacketProtocol> getptr()
+	    {
+		    return shared_from_this();
+	    }
 
-        int processData(char *data, int dataLength);
+	    std::vector<DataPacket> SimpleDataPacketProtocol::processData(std::vector<char> data);
 
-        void reset();
-
-        void setDelegate(std::shared_ptr<SimpleDataPacketProtocolDelegate> newDelegate)
-        {
-            delegate = newDelegate;
-        }
+	    void reset();
 
     private:
-        std::weak_ptr<SimpleDataPacketProtocolDelegate> delegate;
-
-        std::vector<char> buffer;
+	    std::vector<char> buffer;
     };
-}
+    } // namespace portal
 
 #endif
 

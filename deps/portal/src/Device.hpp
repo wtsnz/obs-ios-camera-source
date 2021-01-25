@@ -1,6 +1,6 @@
 /*
  portal
- Copyright (C) 2018    Will Townsend <will@townsend.io>
+ Copyright (C) 2018 Will Townsend <will@townsend.io>
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -15,6 +15,8 @@
  You should have received a copy of the GNU General Public License along
  with this program. If not, see <https://www.gnu.org/licenses/>
  */
+
+#pragma once
 
 #include <map>
 #include <string>
@@ -100,7 +102,7 @@ namespace portal
          */
         uint16_t productID() const;
 
-        int connect(uint16_t port, std::shared_ptr<ChannelDelegate> channelDelegate, int attempts);
+        int connect(uint16_t port, std::shared_ptr<Channel::Delegate> channelDelegate, int attempts);
 
         ~Device();
 
@@ -117,11 +119,11 @@ namespace portal
             return _productId;
         }
 
+	void setUsbmuxDevice(const usbmuxd_device_info_t device);
+	usbmuxd_device_info_t getUsbmuxdInfo() { return _device; }
+
     private:
         DeviceDelegate *delegate = nullptr;
-
-        ///Keeps track of all devices associated by their uuid
-        static DeviceMap s_devices;
 
         std::shared_ptr<Channel> connectedChannel;
 
@@ -129,9 +131,6 @@ namespace portal
         usbmuxd_device_info_t _device;
         std::string _uuid;
         std::string _productId;
-
-        //Removes this device from the device list
-        void removeFromDeviceList();
 
         friend class Portal;
         friend std::ostream &operator<<(std::ostream &os, const Device &v);

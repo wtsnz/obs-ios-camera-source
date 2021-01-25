@@ -5,7 +5,7 @@ set(CMAKE_PREFIX_PATH "${QTDIR}")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
-set (CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 17)
 
 if (WIN32 OR APPLE)
     include(external/FindLibObs.cmake)
@@ -152,16 +152,18 @@ endif()
 set(portal_HEADERS
 	deps/portal/src/Channel.hpp
 	deps/portal/src/Device.hpp
-	deps/portal/src/Portal.hpp
 	deps/portal/src/Protocol.hpp
 	deps/portal/src/logging.h
+	deps/portal/src/DeviceConnection.hpp
+	deps/portal/src/DeviceManager.hpp
 )
 
 set(portal_SOURCES
 	deps/portal/src/Channel.cpp
 	deps/portal/src/Device.cpp
-	deps/portal/src/Portal.cpp
 	deps/portal/src/Protocol.cpp
+	deps/portal/src/DeviceConnection.cpp
+	deps/portal/src/DeviceManager.cpp
 )
 
 include_directories(portal include
@@ -188,7 +190,9 @@ set(obs-ios-camera-source_SOURCES
 	src/VideoDecoder.cpp
 	src/FFMpegVideoDecoder.cpp
 	src/FFMpegAudioDecoder.cpp
-	src/Thread.cpp)
+	src/Thread.cpp
+	src/DeviceApplicationConnectionController.cpp
+)
 
 set(obs-ios-camera-source_HEADERS
 	src/obs-ios-camera-source.h
@@ -197,7 +201,9 @@ set(obs-ios-camera-source_HEADERS
 	src/FFMpegVideoDecoder.h
 	src/FFMpegAudioDecoder.h
 	src/Thread.hpp
-	src/Queue.hpp)
+	src/Queue.hpp
+	src/DeviceApplicationConnectionController.hpp
+)
 
 if(APPLE)
 

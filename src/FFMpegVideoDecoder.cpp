@@ -21,7 +21,7 @@
 
 FFMpegVideoDecoder::FFMpegVideoDecoder()
 {
-    memset(&video_frame, 0, sizeof(video_frame));
+	memset(&video_frame, 0, sizeof(video_frame));
 }
 
 FFMpegVideoDecoder::~FFMpegVideoDecoder()
@@ -71,20 +71,19 @@ void FFMpegVideoDecoder::Input(std::vector<char> packet, int type, int tag)
 static const char *ffmpeg_decode_video_name = "obs_camera_ffmpeg_decode_video";
 void FFMpegVideoDecoder::processPacketItem(PacketItem *packetItem)
 {
-    mMutex.lock();
-    uint64_t cur_time = os_gettime_ns();
-    if (!ffmpeg_decode_valid(video_decoder))
-    {
-        if (ffmpeg_decode_init(video_decoder, AV_CODEC_ID_H264) < 0)
-        {
-            blog(LOG_WARNING, "Could not initialize video decoder");
-            return;
-        }
-    }
+	mMutex.lock();
+	uint64_t cur_time = os_gettime_ns();
+	if (!ffmpeg_decode_valid(video_decoder)) {
+		if (ffmpeg_decode_init(video_decoder, AV_CODEC_ID_H264) < 0) {
+			blog(LOG_WARNING, "Could not initialize video decoder");
+			mMutex.unlock();
+			return;
+		}
+	}
 
-    auto packet = packetItem->getPacket();
-    unsigned char *data = (unsigned char *)packet.data();
-    long long ts = cur_time;
+	auto packet = packetItem->getPacket();
+	unsigned char *data = (unsigned char *)packet.data();
+	long long ts = cur_time;
 
     if (packetItem->getType() == 101) {
         profile_start(ffmpeg_decode_video_name);
@@ -101,13 +100,12 @@ void FFMpegVideoDecoder::processPacketItem(PacketItem *packetItem)
             return;
         }
 
-        if (got_output && source != NULL)
-        {
-            video_frame.timestamp = cur_time;
-            obs_source_output_video(source, &video_frame);
-        }
-    }
-    mMutex.unlock();
+		if (got_output && source != nullptr) {
+			video_frame.timestamp = cur_time;
+			obs_source_output_video(source, &video_frame);
+		}
+	}
+	mMutex.unlock();
 }
 
 void *FFMpegVideoDecoder::run() {
