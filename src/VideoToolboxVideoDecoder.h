@@ -25,7 +25,6 @@
 
 #include <VideoToolbox/VideoToolbox.h>
 
-#include "obs-ios-camera-source.h"
 #include "Queue.hpp"
 #include "Thread.hpp"
 #include "VideoDecoder.h"
