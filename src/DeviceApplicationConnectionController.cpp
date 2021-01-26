@@ -96,7 +96,7 @@ void DeviceApplicationConnectionController::worker_loop()
 		case portal::DeviceConnection::State::Errored:
 
 			if (should_reconnect) {
-				blog(LOG_INFO, "Device connection errored: reconnecting");
+				blog(LOG_DEBUG, "[obs-ios-camera-plugin] Device connection errored: reconnecting");
 				this->deviceConnection->connect();
 			}
 
@@ -104,19 +104,19 @@ void DeviceApplicationConnectionController::worker_loop()
 			
 		case portal::DeviceConnection::State::Disconnected:
 			if (should_reconnect) {
-				blog(LOG_INFO,
-				     "Device connection disconnected: reconnecting if possible");
+				blog(LOG_DEBUG,
+				     "[obs-ios-camera-plugin] Device connection disconnected: reconnecting if possible");
 				this->deviceConnection->connect();
 			}
 			
 			break;
 		case portal::DeviceConnection::State::Connected:
-			blog(LOG_INFO,
-			     "Device connection is already connected. Doing nothing.");
+			blog(LOG_DEBUG,
+			     "[obs-ios-camera-plugin] Device connection is already connected. Doing nothing.");
 			break;
         case portal::DeviceConnection::State::Connecting:
-            blog(LOG_INFO,
-                 "Device connection is already connecting. Doing nothing.");
+            blog(LOG_DEBUG,
+                 "[obs-ios-camera-plugin] Device connection is already connecting. Doing nothing.");
                 break;
         }
 
