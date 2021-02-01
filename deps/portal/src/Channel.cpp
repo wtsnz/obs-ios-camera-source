@@ -100,17 +100,12 @@ bool Channel::StartInternalThread()
 /** Will not return until the internal thread has exited. */
 void Channel::WaitForInternalThreadToExit()
 {
-	//if (_thread == nullptr) {
-	//	return;
-	//}
-	std::unique_lock<std::mutex> lock(worker_mutex);
-
-	if (_thread.joinable() == true) {
-		_thread.join();
-	}
-
-	//_thread = nullptr;
-	lock.unlock();
+    running = false;
+    std::unique_lock<std::mutex> lock(worker_mutex);
+    if (_thread.joinable()) {
+        _thread.join();
+    }
+    lock.unlock();
 }
 
 void Channel::StopInternalThread()
@@ -122,6 +117,7 @@ void Channel::StopInternalThread()
 void Channel::InternalThreadEntry()
 {
 	while (running) {
+        std::unique_lock<std::mutex> lock(worker_mutex);
 
 		const uint32_t numberOfBytesToAskFor =
 			65536; // (1 << 16); // This is the value in DarkLighting
@@ -140,17 +136,18 @@ void Channel::InternalThreadEntry()
 			if (numberOfBytesReceived > 0) {
 				vector.resize(numberOfBytesReceived);
 
-				if (running) {
-					if (auto spt = delegate.lock()) {
-						spt->channelDidReceiveData(
-							vector);
-					}
-				}
+                if (auto spt = delegate.lock()) {
+                    spt->channelDidReceiveData(
+                        vector);
+                }
 			}
+            lock.unlock();
 		} else {
+            // Unlock now as the `close()` function also requires
+            // a lock
+            lock.unlock();
 			portal_log("There was an error receiving data");
 			close();
-			//running = false;
 			setState(State::Errored);
 		}
 	}

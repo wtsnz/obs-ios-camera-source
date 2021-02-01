@@ -81,7 +81,7 @@ private:
 
 	std::weak_ptr<Delegate> delegate;
 
-	bool running = false;
+    std::atomic_bool running = false;
 
 	bool StartInternalThread();
 	void WaitForInternalThreadToExit();

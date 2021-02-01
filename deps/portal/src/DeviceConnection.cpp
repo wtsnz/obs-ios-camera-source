@@ -61,8 +61,7 @@ bool DeviceConnection::connect()
 		if (socketHandle > 0) {
 			std::cout << "got connection: " << socketHandle
 				  << std::endl;
-			channel = std::shared_ptr<Channel>(
-				new Channel(port, socketHandle));
+			channel = std::make_shared<Channel>(port, socketHandle);
 			channel->setDelegate(shared_from_this());
 			channel->start();
 			return 0;
