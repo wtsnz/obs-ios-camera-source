@@ -119,8 +119,7 @@ void Channel::InternalThreadEntry()
 	while (running) {
         std::unique_lock<std::mutex> lock(worker_mutex);
 
-		const uint32_t numberOfBytesToAskFor =
-			65536; // (1 << 16); // This is the value in DarkLighting
+        const uint32_t numberOfBytesToAskFor = 1 << 18; // 262,144
 		uint32_t numberOfBytesReceived = 0;
 		auto vector = std::vector<char>(numberOfBytesToAskFor);
 
