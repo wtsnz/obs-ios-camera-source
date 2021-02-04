@@ -119,13 +119,18 @@ void Channel::InternalThreadEntry()
 	while (running) {
         std::unique_lock<std::mutex> lock(worker_mutex);
 
-        const uint32_t numberOfBytesToAskFor = 1 << 18; // 262,144
-		uint32_t numberOfBytesReceived = 0;
-		auto vector = std::vector<char>(numberOfBytesToAskFor);
+        if (getState() == State::Errored) {
+            return;
+        }
 
-		int ret = usbmuxd_recv_timeout(conn, vector.data(),
-					       numberOfBytesToAskFor,
-					       &numberOfBytesReceived, 1000);
+        // Receive some data
+        const uint32_t numberOfBytesToAskFor = 1 << 18; // 262,144
+        uint32_t numberOfBytesReceived = 0;
+        auto vector = std::vector<char>(numberOfBytesToAskFor);
+
+        int ret = usbmuxd_recv_timeout(conn, vector.data(),
+                           numberOfBytesToAskFor,
+                           &numberOfBytesReceived, 1000);
 
 		if (ret == 0) {
 			if (getState() == State::Connecting) {
