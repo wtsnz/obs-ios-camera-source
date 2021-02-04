@@ -1,8 +1,7 @@
 .vs/
-Debug/
-tools/Debug/
-*.opendb
-*.db
+Win32/
+x64/
+*.user
 # git-ls-files --others --exclude-from=.git/info/exclude
 # Lines that start with '#' are comments.
 # For a project mostly in C, the following would be a good set of
@@ -42,14 +41,4 @@ docs/html
 libusbmuxd.pc
 tools/.libs/*
 tools/iproxy
-
-# MSVC
-*.opensdf
-*.sdf
-*.suo
-*.user
-*.filters
-packages/
-*.nupkg
-Win32/
-x64/
+tools/inetcat
