@@ -148,7 +148,7 @@ bool DeviceManager::stop()
 bool DeviceManager::addDevice(const usbmuxd_device_info_t &device)
 {
 	// Filter out network connected devices
-	if (strcmp(device.connection_type, "Network") == 0) {
+	if (device.conn_type == CONNECTION_TYPE_NETWORK) {
 		return false;
 	}
 

@@ -131,6 +131,9 @@ add_library(libusbmuxd STATIC
 	${libusbmuxd_SOURCES}
 	${libusbmuxd_HEADERS})
 
+
+add_compile_definitions(libusbmuxd HAVE_STPNCPY PACKAGE_STRING="obs-ios-camera-plugin")
+
 target_link_libraries(libusbmuxd
 	libplist
 )
