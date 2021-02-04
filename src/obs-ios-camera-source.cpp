@@ -311,8 +311,10 @@ static bool refresh_devices(obs_properties_t *props, obs_property_t *p,
 		cameraInput->state.devices.begin(),
 		cameraInput->state.devices.end(),
 		[dev_list, &index](IOSCameraInput::MobileCameraDevice &device) {
-			auto uuid = device.name.c_str();
-			obs_property_list_add_string(dev_list, uuid, uuid);
+
+            auto uuid = device.uuid.c_str();
+			auto name = device.name.c_str();
+			obs_property_list_add_string(dev_list, name, uuid);
 
 			// Disable the row if the device is selected as we can only
 			// connect to one device to one source.

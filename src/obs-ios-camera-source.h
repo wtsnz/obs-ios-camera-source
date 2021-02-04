@@ -107,7 +107,7 @@ devicesFromPortal(std::map<std::string, portal::Device::shared_ptr> devices)
 	for (auto const &[key, value] : devices) {
 		auto device = IOSCameraInput::MobileCameraDevice();
 		device.uuid = value->uuid();
-		device.name = value->uuid();
+        device.name = value->name.value_or(value->uuid());
 		list.push_back(device);
 	};
 

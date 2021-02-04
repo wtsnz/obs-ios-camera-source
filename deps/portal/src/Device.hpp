@@ -119,6 +119,8 @@ namespace portal
             return _productId;
         }
 
+        std::optional<std::string> name;
+
 	void setUsbmuxDevice(const usbmuxd_device_info_t device);
 	usbmuxd_device_info_t getUsbmuxdInfo() { return _device; }
 
