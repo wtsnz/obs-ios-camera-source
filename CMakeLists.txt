@@ -133,7 +133,22 @@ add_library(libusbmuxd STATIC
 	${libusbmuxd_HEADERS})
 
 
-add_compile_definitions(libusbmuxd HAVE_STPNCPY PACKAGE_STRING="obs-ios-camera-plugin")
+# Cmake version of configure.ac
+INCLUDE (CheckIncludeFiles)
+INCLUDE(CheckFunctionExists)
+
+
+CHECK_INCLUDE_FILES (sys/inotify.h HAVE_INOTIFY_H)
+if(${HAVE_INOTIFY_H})
+	add_compile_definitions(libusbmuxd HAVE_INOTIFY)
+endif()
+
+check_function_exists(stpncpy HAVE_STPNCPY)
+if(${HAVE_STPNCPY})
+	add_compile_definitions(libusbmuxd HAVE_STPNCPY)
+endif()
+
+add_compile_definitions(libusbmuxd PACKAGE_STRING="obs-ios-camera-plugin")
 
 target_link_libraries(libusbmuxd
 	libplist
