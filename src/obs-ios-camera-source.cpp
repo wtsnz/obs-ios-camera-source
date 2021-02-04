@@ -28,7 +28,7 @@
 #define SETTING_PROP_DISCONNECT_ON_INACTIVE "setting_disconnect_on_inactive"
 
 IOSCameraInput::IOSCameraInput(obs_source_t *source_, obs_data_t *settings)
-	: source(source_), settings(settings), deviceManager()
+	: deviceManager(), source(source_), settings(settings)
 {
 	blog(LOG_INFO, "Creating instance of plugin!");
 
