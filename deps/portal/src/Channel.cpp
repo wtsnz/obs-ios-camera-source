@@ -73,7 +73,7 @@ bool Channel::send(std::vector<char> data)
 
 	uint32_t sentBytes = 0;
 
-	usbmuxd_send(conn, &data[0], data.size(), &sentBytes);
+	return usbmuxd_send(conn, &data[0], data.size(), &sentBytes);
 }
 
 void Channel::setState(State state)
@@ -125,7 +125,7 @@ void Channel::InternalThreadEntry()
 
 		int ret = usbmuxd_recv_timeout(conn, vector.data(),
 					       numberOfBytesToAskFor,
-					       &numberOfBytesReceived, 10);
+					       &numberOfBytesReceived, 1000);
 
 		if (ret == 0) {
 			if (getState() == State::Connecting) {
@@ -141,9 +141,15 @@ void Channel::InternalThreadEntry()
                 }
 			}
             lock.unlock();
+        } else if (ret == -ETIMEDOUT) {
+
+            // Timed out waiting for data.
+            std::cout << "Timed out" << std::endl;
+            lock.unlock();
+
 		} else {
-            // Unlock now as the `close()` function also requires
-            // a lock
+            // -ECONNRESET
+            // Unlock now as the `close()` function also requires a lock
             lock.unlock();
 			portal_log("There was an error receiving data");
 			close();
