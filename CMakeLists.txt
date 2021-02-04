@@ -114,12 +114,13 @@ target_link_libraries(libplist
 set(libusbmuxd_HEADERS
 	deps/libusbmuxd/common/collection.h
 	deps/libusbmuxd/common/socket.h
-	#deps/libusbmuxd/src/msc_config.h
+	deps/libusbmuxd/common/thread.h
 )
 
 set(libusbmuxd_SOURCES
 	deps/libusbmuxd/common/collection.c
 	deps/libusbmuxd/common/socket.c
+	deps/libusbmuxd/common/thread.c
 	deps/libusbmuxd/src/libusbmuxd.c
 )
 
