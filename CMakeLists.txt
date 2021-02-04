@@ -30,9 +30,6 @@ endif()
 # ---- libcnary
 
 set(libcnary_HEADERS
-	deps/libplist/libcnary/include/iterator.h
-	deps/libplist/libcnary/include/list.h
-	deps/libplist/libcnary/include/node_iterator.h
 	deps/libplist/libcnary/include/node_list.h
 	deps/libplist/libcnary/include/node.h
 	deps/libplist/libcnary/include/object.h
@@ -40,9 +37,6 @@ set(libcnary_HEADERS
 
 set(libcnary_SOURCES
 	deps/libplist/libcnary/cnary.c
-	deps/libplist/libcnary/iterator.c
-	deps/libplist/libcnary/list.c
-	deps/libplist/libcnary/node_iterator.c
 	deps/libplist/libcnary/node_list.c
 	deps/libplist/libcnary/node.c
 )
@@ -59,7 +53,6 @@ set(libplist_HEADERS
 	deps/libplist/src/base64.h
 	deps/libplist/src/bytearray.h
 	deps/libplist/src/hashtable.h
-	deps/libplist/src/msc_config.h
 	deps/libplist/src/plist.h
 	deps/libplist/src/ptrarray.h
 	deps/libplist/src/strbuf.h
@@ -121,7 +114,7 @@ target_link_libraries(libplist
 set(libusbmuxd_HEADERS
 	deps/libusbmuxd/common/collection.h
 	deps/libusbmuxd/common/socket.h
-	deps/libusbmuxd/src/msc_config.h
+	#deps/libusbmuxd/src/msc_config.h
 )
 
 set(libusbmuxd_SOURCES
