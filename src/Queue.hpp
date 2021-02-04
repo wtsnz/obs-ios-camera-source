@@ -63,12 +63,12 @@ template <typename T> class WorkQueue
     std::condition_variable mConditionVariable;
     
     // Whether the queue should stop.
-    // This is required becuase there was an deadlock issue where trying to
+    // This is required because there was an deadlock issue where trying to
     // stop an std::thread that is waiting on a std::condition_variable to
     // return.
     // This stackoverflow question explains in more detail
     // https://stackoverflow.com/q/21757124
-    bool m_shouldStop = false;
+    std::atomic_bool m_shouldStop = false;
     
 public:
     
@@ -77,11 +77,13 @@ public:
     ~WorkQueue() {
     }
     void add(T item) {
+	    if (m_shouldStop) {
+		    return;
+	    }
         mMutex.lock();
         m_queue.push_back(item);
         mConditionVariable.notify_all();
         mMutex.unlock();
-//        printf("Added item. item count: %d\n", this->size());
     }
     T remove() {
         std::unique_lock<std::mutex> lock (mMutex);
@@ -92,11 +94,9 @@ public:
             T item = m_queue.front();
             m_queue.pop_front();
             lock.unlock();
-//            printf("Removed item. item count: %d\n", this->size());
             return item;
         } else {
             lock.unlock();
-            // printf("No item to remove. item count: %d\n", this->size());
             return NULL;
         }
         

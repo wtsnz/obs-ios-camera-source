@@ -16,6 +16,8 @@
  with this program. If not, see <https://www.gnu.org/licenses/>
  */
 
+#pragma once
+
 #include <obs.h>
 #include <chrono>
 #include <vector>
@@ -23,7 +25,6 @@
 
 #include <VideoToolbox/VideoToolbox.h>
 
-#include "obs-ios-camera-source.h"
 #include "Queue.hpp"
 #include "Thread.hpp"
 #include "VideoDecoder.h"

@@ -29,9 +29,9 @@ cd ..
 echo "[obs-ios-camera-plugin] Cloning obs-studio from GitHub.."
 git clone https://github.com/obsproject/obs-studio
 cd obs-studio
-# OBSLatestTag=$(git describe --tags --abbrev=0)
-# git checkout $OBSLatestTag
-git checkout 24.0.6
+OBSLatestTag=$(git describe --tags --abbrev=0)
+git checkout $OBSLatestTag
+#git checkout 24.0.6
 mkdir build && cd build
 echo "[obs-ios-camera-plugin] Building obs-studio.."
 cmake .. \

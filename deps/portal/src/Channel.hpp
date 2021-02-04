@@ -1,6 +1,6 @@
 /*
  portal
- Copyright (C) 2018    Will Townsend <will@townsend.io>
+ Copyright (C) 2018 Will Townsend <will@townsend.io>
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -16,78 +16,86 @@
  with this program. If not, see <https://www.gnu.org/licenses/>
  */
 
-#include <usbmuxd.h>
-#include <thread>
+#pragma once
 
-#include "logging.h"
+#include <thread>
+#include <mutex>
+#include <usbmuxd.h>
+
 #include "Protocol.hpp"
 
-namespace portal
+#include "logging.h"
+
+#include <iostream>
+#include <type_traits>
+template<typename T>
+std::ostream &operator<<(
+	typename std::enable_if<std::is_enum<T>::value,
+	std::ostream>::type &stream,
+	const T &e
+)
 {
-
-    class ChannelDelegate
-    {
-    public:
-        virtual void channelDidReceivePacket(std::vector<char> packet, int type, int tag) = 0;
-        virtual void channelDidStop() = 0;
-        virtual ~ChannelDelegate(){};
-    };
-
-    class Channel : public SimpleDataPacketProtocolDelegate, public std::enable_shared_from_this<Channel>
-    {
-    public:
-        Channel(int port, int sfd);
-        ~Channel();
-
-        std::shared_ptr<Channel> getptr()
-        {
-            return shared_from_this();
-        }
-
-        void close();
-
-        void simpleDataPacketProtocolDelegateDidProcessPacket(std::vector<char> packet, int type, int tag);
-
-        void setDelegate(std::shared_ptr<ChannelDelegate> newDelegate)
-        {
-            delegate = newDelegate;
-        }
-
-        int getPort() {
-            return port;
-        }
-
-        void configureProtocolDelegate() {
-            protocol->setDelegate(shared_from_this());
-        }
-
-    private:
-        int port;
-        int conn;
-
-        void setPacketDelegate(std::shared_ptr<SimpleDataPacketProtocolDelegate> newDelegate)
-        {
-            protocol->setDelegate(newDelegate);
-        }
-
-        std::unique_ptr<SimpleDataPacketProtocol> protocol;
-
-        std::weak_ptr<ChannelDelegate> delegate;
-
-        bool running = false;
-
-        bool StartInternalThread();
-        void WaitForInternalThreadToExit();
-        void StopInternalThread();
-        void InternalThreadEntry();
-
-        static void *InternalThreadEntryFunc(void *This)
-        {
-            ((portal::Channel *)This)->InternalThreadEntry();
-            return NULL;
-        }
-
-        std::thread _thread;
-    };
+	return stream << static_cast<typename std::underlying_type<T>::type>(e);
 }
 
+namespace portal {
+
+class Channel : public std::enable_shared_from_this<Channel> {
+
+public:
+	enum class State { Disconnected = 0, Connecting, Connected, Errored };
+
+	class Delegate {
+	public:
+		virtual void channelDidReceiveData(std::vector<char> data) = 0;
+		virtual void channelDidChangeState(Channel::State state) = 0;
+		virtual void channelDidStop() = 0;
+		virtual ~Delegate(){};
+	};
+
+	Channel(int port, int sfd);
+	~Channel();
+
+	bool start();
+	bool close();
+
+	bool send(std::vector<char> data);
+
+	std::shared_ptr<Channel> getptr() { return shared_from_this(); }
+
+	void setDelegate(std::shared_ptr<Delegate> newDelegate)
+	{
+		delegate = newDelegate;
+	}
+
+	int getPort() { return port; }
+
+private:
+	int port;
+	int conn;
+
+	void setState(State state);
+	State getState() { return _state; };
+
+	State _state;
+
+	std::weak_ptr<Delegate> delegate;
+
+    std::atomic_bool running = false;
+
+	bool StartInternalThread();
+	void WaitForInternalThreadToExit();
+	void StopInternalThread();
+	void InternalThreadEntry();
+
+	static void *InternalThreadEntryFunc(void *This)
+	{
+		((portal::Channel *)This)->InternalThreadEntry();
+		return NULL;
+	}
+
+	std::mutex worker_mutex;
+	std::thread _thread;
+};
+
+} // namespace portal

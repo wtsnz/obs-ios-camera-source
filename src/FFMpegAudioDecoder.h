@@ -1,6 +1,6 @@
 /*
  obs-ios-camera-source
- Copyright (C) 2018    Will Townsend <will@townsend.io>
+ Copyright (C) 2018 Will Townsend <will@townsend.io>
  
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -16,9 +16,9 @@
  with this program. If not, see <https://www.gnu.org/licenses/>
  */
 
-#include <chrono>
+#pragma once
 
-#include "obs-ios-camera-source.h"
+#include <chrono>
 #include "VideoDecoder.h"
 #include "ffmpeg-decode.h"
 #include "Queue.hpp"
