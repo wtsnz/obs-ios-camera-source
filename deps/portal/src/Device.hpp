@@ -27,6 +27,7 @@
 #include "logging.h"
 #include "Protocol.hpp"
 #include "Channel.hpp"
+#include <optional>
 
 namespace portal
 {
