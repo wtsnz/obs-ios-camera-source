@@ -150,6 +150,11 @@ endif()
 
 add_compile_definitions(libusbmuxd PACKAGE_STRING="obs-ios-camera-plugin")
 
+# Ignore multiple definitions of thread_once from libusbmuxd and libplist
+if(MSVC)
+    target_link_options(libusbmuxd PUBLIC /FORCE:MULTIPLE)
+endif()
+
 target_link_libraries(libusbmuxd
 	libplist
 )
