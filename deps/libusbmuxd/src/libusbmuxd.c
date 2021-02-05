@@ -52,6 +52,11 @@
 #if !HAVE_SLEEP || !defined(Sleep)
 #define sleep(x) Sleep(x*1000)
 #endif
+
+#ifdef _MSC_VER /* MSVC */
+#define strcasecmp stricmp
+#endif
+
 #else
 #include <unistd.h>
 #include <sys/socket.h>
