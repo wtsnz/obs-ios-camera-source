@@ -1,10 +1,14 @@
 project(libimobiledevice)
 cmake_minimum_required(VERSION 3.2)
 
+set(OPENSSL_USE_STATIC_LIBS TRUE)
 find_package(OpenSSL REQUIRED)
+set(OPENSSL_USE_STATIC_LIBS TRUE)
 
 message("OpenSSL include dir: ${OPENSSL_INCLUDE_DIR}")
 message("OpenSSL libraries: ${OPENSSL_LIBRARIES}")
+
+message("other: ${OPENSSL_SSL_LIBRARIES} ${OPENSSL_CRYPTO_LIBRARIES}")
 
 set(libimobiledevice_HEADERS
     #common/debug.h
@@ -94,7 +98,8 @@ target_include_directories(libimobiledevice
 target_link_libraries(libimobiledevice
 	libplist
     libusbmuxd
-    ${OPENSSL_LIBRARIES}
+    OpenSSL::SSL
+    OpenSSL::Crypto
 )
 
 add_compile_definitions(libimobiledevice HAVE_OPENSSL HAVE_STPCPY HAVE_VASPRINTF HAVE_ASPRINTF)
