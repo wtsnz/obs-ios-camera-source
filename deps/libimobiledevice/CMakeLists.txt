@@ -102,4 +102,19 @@ target_link_libraries(libimobiledevice
     OpenSSL::Crypto
 )
 
-add_compile_definitions(libimobiledevice HAVE_OPENSSL HAVE_STPCPY HAVE_VASPRINTF HAVE_ASPRINTF)
+check_function_exists(stpncpy HAVE_STPNCPY)
+if(${HAVE_STPNCPY})
+	add_compile_definitions(libimobiledevice HAVE_STPNCPY)
+endif()
+
+check_function_exists(asprintf HAVE_ASPRINTF)
+if(${HAVE_ASPRINTF})
+	add_compile_definitions(libimobiledevice HAVE_ASPRINTF)
+endif()
+
+check_function_exists(vasprintf HAVE_VASPRINTF)
+if(${HAVE_VASPRINTF})
+	add_compile_definitions(libimobiledevice HAVE_VASPRINTF)
+endif()
+
+add_compile_definitions(libimobiledevice HAVE_OPENSSL)
