@@ -19,6 +19,9 @@ jobs:
       DepsPath32: '$(DepsBasePath)\win32'
       DepsPath64: '$(DepsBasePath)\win64'
       QtBaseDir: 'D:\QtDep'
+      vcpkgToolchain: 'c:/vcpkg/scripts/buildsystems/vcpkg.cmake'
+      OpenSSL32: 'c:/vcpkg/installed/x86-windows'
+      OpenSSL64: 'c:/vcpkg/installed/x64-windows'
       QTDIR32: '$(QtBaseDir)\5.10.1\msvc2017'
       QTDIR64: '$(QtBaseDir)\5.10.1\msvc2017_64'
       OBSPath: 'D:\obs-studio'
@@ -31,6 +34,11 @@ jobs:
         env:
           QtBaseDir: $(QtBaseDir)
   
+      - script: ./CI/install-ios-camera-dependencies.cmd
+        displayName: 'Install iOS Camera Plugin Dependencies'
+        env:
+          vcpkgToolchain: '$(vcpkgToolchain)'
+
       - task: Cache@2
         displayName: Restore cached OBS Studio dependencies
         inputs:
@@ -79,6 +87,9 @@ jobs:
           QTDIR32: $(QTDIR32)
           QTDIR64: $(QTDIR64)
           OBSPath: $(OBSPath)
+          vcpkgToolchain: $(vcpkgToolchain)
+          OpenSSL32: $(OpenSSL32)
+          OpenSSL64: $(OpenSSL64)
   
       - task: MSBuild@1
         displayName: 'Build obs-ios-camera-source 32-bit'
