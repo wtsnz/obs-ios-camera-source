@@ -34,6 +34,14 @@ jobs:
         env:
           QtBaseDir: $(QtBaseDir)
   
+      - task: Cache@2
+        displayName: Restore cached iOS Camera Plugin Dependencies
+        inputs:
+          key: 'obscam-cache-2 | "$(Agent.OS)"'
+          restoreKeys: |
+            obscam-cache-2 | "$(Agent.OS)"
+          path: 'c:\vcpkg\installed\'
+
       - script: ./CI/install-ios-camera-dependencies.cmd
         displayName: 'Install iOS Camera Plugin Dependencies'
         env:
@@ -148,5 +156,5 @@ jobs:
       - task: PublishBuildArtifacts@1
         inputs:
           pathtoPublish: './release'
-          artifactName: 'macos_build'
-  
+          artifactName: 'macos_build' 
+
