@@ -96,16 +96,19 @@ target_include_directories(libimobiledevice
 )
 
 target_link_libraries(libimobiledevice
+PRIVATE
 	libplist
     libusbmuxd
+)
+
+target_link_libraries(libimobiledevice PRIVATE
     OpenSSL::SSL
     OpenSSL::Crypto
 )
 
-
-check_function_exists(stpcpy HAVE_STPCPY)
-if(${HAVE_STPCPY})
-	add_compile_definitions(libimobiledevice HAVE_STPCPY)
+# https://gitlab.kitware.com/cmake/cmake/-/issues/19263
+if(WIN32)
+  target_link_libraries(libimobiledevice PRIVATE Crypt32 ws2_32)
 endif()
 
 check_function_exists(stpncpy HAVE_STPNCPY)
