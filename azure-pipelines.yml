@@ -20,8 +20,10 @@ jobs:
       DepsPath64: '$(DepsBasePath)\win64'
       QtBaseDir: 'D:\QtDep'
       vcpkgToolchain: 'c:/vcpkg/scripts/buildsystems/vcpkg.cmake'
-      OpenSSL32: 'c:/vcpkg/installed/x86-windows'
-      OpenSSL64: 'c:/vcpkg/installed/x64-windows'
+      VCPKG_DEFAULT_TRIPLET_64: 'x64-windows-static'
+      VCPKG_DEFAULT_TRIPLET_86: '86-windows-static'
+      OpenSSL32: 'c:/vcpkg/installed/x86-windows-static'
+      OpenSSL64: 'c:/vcpkg/installed/x64-windows-static'
       QTDIR32: '$(QtBaseDir)\5.10.1\msvc2017'
       QTDIR64: '$(QtBaseDir)\5.10.1\msvc2017_64'
       OBSPath: 'D:\obs-studio'
@@ -96,6 +98,8 @@ jobs:
           QTDIR64: $(QTDIR64)
           OBSPath: $(OBSPath)
           vcpkgToolchain: $(vcpkgToolchain)
+          VCPKG_DEFAULT_TRIPLET_64: ${VCPKG_DEFAULT_TRIPLET_64}
+          VCPKG_DEFAULT_TRIPLET_86: ${VCPKG_DEFAULT_TRIPLET_86}
           OpenSSL32: $(OpenSSL32)
           OpenSSL64: $(OpenSSL64)
   
