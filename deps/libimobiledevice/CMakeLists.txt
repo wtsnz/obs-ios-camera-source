@@ -111,6 +111,11 @@ if(WIN32)
   target_link_libraries(libimobiledevice PRIVATE Crypt32 ws2_32)
 endif()
 
+check_function_exists(stpcpy HAVE_STPCPY)
+if(${HAVE_STPCPY})
+    add_compile_definitions(libimobiledevice HAVE_STPCPY)
+endif()
+
 check_function_exists(stpncpy HAVE_STPNCPY)
 if(${HAVE_STPNCPY})
 	add_compile_definitions(libimobiledevice HAVE_STPNCPY)
