@@ -95,6 +95,11 @@ target_include_directories(libimobiledevice
 	PUBLIC include
 )
 
+if(WIN32)
+    find_path(DIRENT_INCLUDE_DIRS "dirent.h")
+    target_include_directories(libimobiledevice PRIVATE ${DIRENT_INCLUDE_DIRS})
+endif()
+
 target_link_libraries(libimobiledevice
 PRIVATE
 	libplist
