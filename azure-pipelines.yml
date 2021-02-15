@@ -39,9 +39,9 @@ jobs:
       - task: Cache@2
         displayName: Restore cached iOS Camera Plugin Dependencies
         inputs:
-          key: 'obscam-cache-2 | "$(Agent.OS)"'
+          key: 'obscam-cache-3 | "$(Agent.OS)"'
           restoreKeys: |
-            obscam-cache-2 | "$(Agent.OS)"
+            obscam-cache-3 | "$(Agent.OS)"
           path: 'c:\vcpkg\installed\'
 
       - script: ./CI/install-ios-camera-dependencies.cmd
@@ -52,9 +52,9 @@ jobs:
       - task: Cache@2
         displayName: Restore cached OBS Studio dependencies
         inputs:
-          key: 'obsdeps-2 | "$(Agent.OS)"'
+          key: 'obsdeps-3 | "$(Agent.OS)"'
           restoreKeys: |
-            obsdeps-2 | "$(Agent.OS)"
+            obsdeps-3 | "$(Agent.OS)"
           path: $(DepsBasePath)
   
       - script: ./CI/download-obs-deps.cmd
@@ -63,9 +63,9 @@ jobs:
       - task: Cache@2
         displayName: Restore cached OBS Studio builds
         inputs:
-          key: 'obs-build-1 | "$(Agent.OS)"'
+          key: 'obs-build-2 | "$(Agent.OS)"'
           restoreKeys: |
-            obs-build-1 | "$(Agent.OS)"
+            obs-build-2 | "$(Agent.OS)"
           path: $(OBSPath)
   
       - script: ./CI/checkout-cmake-obs-windows.cmd
