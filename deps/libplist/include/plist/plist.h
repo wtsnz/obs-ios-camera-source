@@ -3,7 +3,8 @@
  * @brief Main include of libplist
  * \internal
  *
- * Copyright (c) 2008 Jonathan Beck All Rights Reserved.
+ * Copyright (c) 2012-2019 Nikias Bassen, All Rights Reserved.
+ * Copyright (c) 2008-2009 Jonathan Beck, All Rights Reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,7 +29,8 @@ extern "C"
 {
 #endif
 
-#ifdef _MSC_VER
+#if _MSC_VER && _MSC_VER < 1700
+    typedef __int8 int8_t;
     typedef __int16 int16_t;
     typedef __int32 int32_t;
     typedef __int64 int64_t;
@@ -95,7 +97,12 @@ extern "C"
     /**
      * The plist dictionary iterator.
      */
-    typedef void *plist_dict_iter;
+    typedef void* plist_dict_iter;
+
+    /**
+     * The plist array iterator.
+     */
+    typedef void* plist_array_iter;
 
     /**
      * The enumeration of plist node types.
@@ -246,7 +253,7 @@ extern "C"
      * Get the index of an item. item must be a member of a #PLIST_ARRAY node.
      *
      * @param node the node
-     * @return the node index
+     * @return the node index or UINT_MAX if node index can't be determined
      */
     PLIST_API_MSC uint32_t plist_array_get_item_index(plist_t node);
 
@@ -286,6 +293,35 @@ extern "C"
      */
     PLIST_API_MSC void plist_array_remove_item(plist_t node, uint32_t n);
 
+    /**
+     * Remove a node that is a child node of a #PLIST_ARRAY node.
+     * node will be freed using #plist_free.
+     *
+     * @param node The node to be removed from its #PLIST_ARRAY parent.
+     */
+	PLIST_API_MSC void plist_array_item_remove(plist_t node);
+
+    /**
+     * Create an iterator of a #PLIST_ARRAY node.
+     * The allocated iterator should be freed with the standard free function.
+     *
+     * @param node The node of type #PLIST_ARRAY
+     * @param iter Location to store the iterator for the array.
+     */
+	PLIST_API_MSC void plist_array_new_iter(plist_t node, plist_array_iter *iter);
+
+    /**
+     * Increment iterator of a #PLIST_ARRAY node.
+     *
+     * @param node The node of type #PLIST_ARRAY.
+     * @param iter Iterator of the array
+     * @param item Location to store the item. The caller must *not* free the
+     *          returned item. Will be set to NULL when no more items are left
+     *          to iterate.
+     */
+	PLIST_API_MSC void plist_array_next_item(plist_t node, plist_array_iter iter, plist_t *item);
+
+
     /********************************************
      *                                          *
      *         Dictionary functions             *
@@ -304,27 +340,28 @@ extern "C"
      * Create an iterator of a #PLIST_DICT node.
      * The allocated iterator should be freed with the standard free function.
      *
-     * @param node the node of type #PLIST_DICT
-     * @param iter iterator of the #PLIST_DICT node
+     * @param node The node of type #PLIST_DICT.
+     * @param iter Location to store the iterator for the dictionary.
      */
     PLIST_API_MSC void plist_dict_new_iter(plist_t node, plist_dict_iter *iter);
 
     /**
      * Increment iterator of a #PLIST_DICT node.
      *
-     * @param node the node of type #PLIST_DICT
-     * @param iter iterator of the dictionary
-     * @param key a location to store the key, or NULL. The caller is responsible
+     * @param node The node of type #PLIST_DICT
+     * @param iter Iterator of the dictionary
+     * @param key Location to store the key, or NULL. The caller is responsible
      *		for freeing the the returned string.
-     * @param val a location to store the value, or NULL. The caller should *not*
-     *		free the returned value.
+     * @param val Location to store the value, or NULL. The caller must *not*
+     *		free the returned value. Will be set to NULL when no more
+     *		key/value pairs are left to iterate.
      */
     PLIST_API_MSC void plist_dict_next_item(plist_t node, plist_dict_iter iter, char **key, plist_t *val);
 
     /**
-     * Get key associated to an item. Item must be member of a dictionary
+     * Get key associated key to an item. Item must be member of a dictionary.
      *
-     * @param node the node
+     * @param node the item
      * @param key a location to store the key. The caller is responsible for freeing the returned string.
      */
     PLIST_API_MSC void plist_dict_get_item_key(plist_t node, char **key);
@@ -338,6 +375,14 @@ extern "C"
      *		the returned node.
      */
     PLIST_API_MSC plist_t plist_dict_get_item(plist_t node, const char* key);
+
+    /**
+     * Get key node associated to an item. Item must be member of a dictionary.
+     *
+     * @param node the item
+     * @return the key node of the given item, or NULL.
+     */
+	PLIST_API_MSC plist_t plist_dict_item_get_key(plist_t node);
 
     /**
      * Set item identified by key in a #PLIST_DICT node.
@@ -424,6 +469,19 @@ extern "C"
     PLIST_API_MSC void plist_get_string_val(plist_t node, char **val);
 
     /**
+     * Get a pointer to the buffer of a #PLIST_STRING node.
+     *
+     * @note DO NOT MODIFY the buffer. Mind that the buffer is only available
+     *   until the plist node gets freed. Make a copy if needed.
+     *
+     * @param node The node
+     * @param length If non-NULL, will be set to the length of the string
+     *
+     * @return Pointer to the NULL-terminated buffer.
+     */
+    PLIST_API_MSC const char* plist_get_string_ptr(plist_t node, uint64_t* length);
+
+    /**
      * Get the value of a #PLIST_BOOLEAN node.
      * This function does nothing if node is not of type #PLIST_BOOLEAN
      *
@@ -460,6 +518,19 @@ extern "C"
      * @param length the length of the buffer
      */
     PLIST_API_MSC void plist_get_data_val(plist_t node, char **val, uint64_t * length);
+
+    /**
+     * Get a pointer to the data buffer of a #PLIST_DATA node.
+     *
+     * @note DO NOT MODIFY the buffer. Mind that the buffer is only available
+     *   until the plist node gets freed. Make a copy if needed.
+     *
+     * @param node The node
+     * @param length Pointer to a uint64_t that will be set to the length of the buffer
+     *
+     * @return Pointer to the buffer
+     */
+    PLIST_API_MSC const char* plist_get_data_ptr(plist_t node, uint64_t* length);
 
     /**
      * Get the value of a #PLIST_DATE node.
@@ -581,11 +652,11 @@ extern "C"
     PLIST_API_MSC void plist_to_xml(plist_t plist, char **plist_xml, uint32_t * length);
 
     /**
-    * Frees the memory allocated by plist_to_xml
-    *
-    * @param plist_xml The object allocated by plist_to_xml
-    */
-    PLIST_API_MSC void plist_to_xml_free(char **plist_xml);
+     * Frees the memory allocated by plist_to_xml().
+     *
+     * @param plist_xml The buffer allocated by plist_to_xml().
+     */
+    PLIST_API_MSC void plist_to_xml_free(char *plist_xml);
 
     /**
      * Export the #plist_t structure to binary format.
@@ -598,11 +669,11 @@ extern "C"
     PLIST_API_MSC void plist_to_bin(plist_t plist, char **plist_bin, uint32_t * length);
 
     /**
-      * Frees the memory allocated by plist_to_bin
-      *
-      * @param plist_bin The object allocated by plist_to_bin
-      */
-    PLIST_API_MSC void plist_to_bin_free(char **plist_bin);
+     * Frees the memory allocated by plist_to_bin().
+     *
+     * @param plist_bin The buffer allocated by plist_to_bin().
+     */
+    PLIST_API_MSC void plist_to_bin_free(char *plist_bin);
 
     /**
      * Import the #plist_t structure from XML format.
@@ -696,6 +767,189 @@ extern "C"
     #define PLIST_IS_DATA(__plist)    _PLIST_IS_TYPE(__plist, DATA)
     #define PLIST_IS_KEY(__plist)     _PLIST_IS_TYPE(__plist, KEY)
     #define PLIST_IS_UID(__plist)     _PLIST_IS_TYPE(__plist, UID)
+
+    /**
+     * Helper function to check the value of a PLIST_BOOL node.
+     *
+     * @param boolnode node of type PLIST_BOOL
+     * @return 1 if the boolean node has a value of TRUE, 0 if FALSE,
+     *   or -1 if the node is not of type PLIST_BOOL
+     */
+    PLIST_API_MSC int plist_bool_val_is_true(plist_t boolnode);
+
+    /**
+     * Helper function to compare the value of a PLIST_UINT node against
+     * a given value.
+     *
+     * @param uintnode node of type PLIST_UINT
+     * @param cmpval value to compare against
+     * @return 0 if the node's value and cmpval are equal,
+     *         1 if the node's value is greater than cmpval,
+     *         or -1 if the node's value is less than cmpval.
+     */
+    PLIST_API_MSC int plist_uint_val_compare(plist_t uintnode, uint64_t cmpval);
+
+    /**
+     * Helper function to compare the value of a PLIST_UID node against
+     * a given value.
+     *
+     * @param uidnode node of type PLIST_UID
+     * @param cmpval value to compare against
+     * @return 0 if the node's value and cmpval are equal,
+     *         1 if the node's value is greater than cmpval,
+     *         or -1 if the node's value is less than cmpval.
+     */
+    PLIST_API_MSC int plist_uid_val_compare(plist_t uidnode, uint64_t cmpval);
+
+    /**
+     * Helper function to compare the value of a PLIST_REAL node against
+     * a given value.
+     *
+     * @note WARNING: Comparing floating point values can give inaccurate
+     *     results because of the nature of floating point values on computer
+     *     systems. While this function is designed to be as accurate as
+     *     possible, please don't rely on it too much.
+     *
+     * @param realnode node of type PLIST_REAL
+     * @param cmpval value to compare against
+     * @return 0 if the node's value and cmpval are (almost) equal,
+     *         1 if the node's value is greater than cmpval,
+     *         or -1 if the node's value is less than cmpval.
+     */
+    PLIST_API_MSC int plist_real_val_compare(plist_t realnode, double cmpval);
+
+    /**
+     * Helper function to compare the value of a PLIST_DATE node against
+     * a given set of seconds and fraction of a second since epoch.
+     *
+     * @param datenode node of type PLIST_DATE
+     * @param cmpsec number of seconds since epoch to compare against
+     * @param cmpusec fraction of a second in microseconds to compare against
+     * @return 0 if the node's date is equal to the supplied values,
+     *         1 if the node's date is greater than the supplied values,
+     *         or -1 if the node's date is less than the supplied values.
+     */
+    PLIST_API_MSC int plist_date_val_compare(plist_t datenode, int32_t cmpsec, int32_t cmpusec);
+
+    /**
+     * Helper function to compare the value of a PLIST_STRING node against
+     * a given value.
+     * This function basically behaves like strcmp.
+     *
+     * @param strnode node of type PLIST_STRING
+     * @param cmpval value to compare against
+     * @return 0 if the node's value and cmpval are equal,
+     *     > 0 if the node's value is lexicographically greater than cmpval,
+     *     or < 0 if the node's value is lexicographically less than cmpval.
+     */
+    PLIST_API_MSC int plist_string_val_compare(plist_t strnode, const char* cmpval);
+
+    /**
+     * Helper function to compare the value of a PLIST_STRING node against
+     * a given value, while not comparing more than n characters.
+     * This function basically behaves like strncmp.
+     *
+     * @param strnode node of type PLIST_STRING
+     * @param cmpval value to compare against
+     * @param n maximum number of characters to compare
+     * @return 0 if the node's value and cmpval are equal,
+     *     > 0 if the node's value is lexicographically greater than cmpval,
+     *     or < 0 if the node's value is lexicographically less than cmpval.
+     */
+    PLIST_API_MSC int plist_string_val_compare_with_size(plist_t strnode, const char* cmpval, size_t n);
+
+    /**
+     * Helper function to match a given substring in the value of a
+     * PLIST_STRING node.
+     *
+     * @param strnode node of type PLIST_STRING
+     * @param substr value to match
+     * @return 1 if the node's value contains the given substring,
+     *     or 0 if not.
+     */
+    PLIST_API_MSC int plist_string_val_contains(plist_t strnode, const char* substr);
+
+    /**
+     * Helper function to compare the value of a PLIST_KEY node against
+     * a given value.
+     * This function basically behaves like strcmp.
+     *
+     * @param keynode node of type PLIST_KEY
+     * @param cmpval value to compare against
+     * @return 0 if the node's value and cmpval are equal,
+     *     > 0 if the node's value is lexicographically greater than cmpval,
+     *     or < 0 if the node's value is lexicographically less than cmpval.
+     */
+    PLIST_API_MSC int plist_key_val_compare(plist_t keynode, const char* cmpval);
+
+    /**
+     * Helper function to compare the value of a PLIST_KEY node against
+     * a given value, while not comparing more than n characters.
+     * This function basically behaves like strncmp.
+     *
+     * @param keynode node of type PLIST_KEY
+     * @param cmpval value to compare against
+     * @param n maximum number of characters to compare
+     * @return 0 if the node's value and cmpval are equal,
+     *     > 0 if the node's value is lexicographically greater than cmpval,
+     *     or < 0 if the node's value is lexicographically less than cmpval.
+     */
+    PLIST_API_MSC int plist_key_val_compare_with_size(plist_t keynode, const char* cmpval, size_t n);
+
+    /**
+     * Helper function to match a given substring in the value of a
+     * PLIST_KEY node.
+     *
+     * @param keynode node of type PLIST_KEY
+     * @param substr value to match
+     * @return 1 if the node's value contains the given substring,
+     *     or 0 if not.
+     */
+    PLIST_API_MSC int plist_key_val_contains(plist_t keynode, const char* substr);
+
+    /**
+     * Helper function to compare the data of a PLIST_DATA node against
+     * a given blob and size.
+     * This function basically behaves like memcmp after making sure the
+     * size of the node's data value is equal to the size of cmpval (n),
+     * making this a "full match" comparison.
+     *
+     * @param datanode node of type PLIST_DATA
+     * @param cmpval data blob to compare against
+     * @param n size of data blob passed in cmpval
+     * @return 0 if the node's data blob and cmpval are equal,
+     *     > 0 if the node's value is lexicographically greater than cmpval,
+     *     or < 0 if the node's value is lexicographically less than cmpval.
+     */
+    PLIST_API_MSC int plist_data_val_compare(plist_t datanode, const uint8_t* cmpval, size_t n);
+
+    /**
+     * Helper function to compare the data of a PLIST_DATA node against
+     * a given blob and size, while no more than n bytes are compared.
+     * This function basically behaves like memcmp after making sure the
+     * size of the node's data value is at least n, making this a
+     * "starts with" comparison.
+     *
+     * @param datanode node of type PLIST_DATA
+     * @param cmpval data blob to compare against
+     * @param n size of data blob passed in cmpval
+     * @return 0 if the node's value and cmpval are equal,
+     *     > 0 if the node's value is lexicographically greater than cmpval,
+     *     or < 0 if the node's value is lexicographically less than cmpval.
+     */
+    PLIST_API_MSC int plist_data_val_compare_with_size(plist_t datanode, const uint8_t* cmpval, size_t n);
+
+    /**
+     * Helper function to match a given data blob within the value of a
+     * PLIST_DATA node.
+     *
+     * @param datanode node of type PLIST_KEY
+     * @param cmpval data blob to match
+     * @param n size of data blob passed in cmpval
+     * @return 1 if the node's value contains the given data blob
+     *     or 0 if not.
+     */
+    PLIST_API_MSC int plist_data_val_contains(plist_t datanode, const uint8_t* cmpval, size_t n);
 
     /*@}*/
 

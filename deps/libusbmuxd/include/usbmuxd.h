@@ -1,8 +1,8 @@
 /*
  * usbmuxd.h - A client library to talk to the usbmuxd daemon.
  *
+ * Copyright (C) 2009-2018 Nikias Bassen <nikias@gmx.li>
  * Copyright (C) 2014 Martin Szulecki <m.szulecki@libimobiledevice.org>
- * Copyright (C) 2009 Nikias Bassen <nikias@gmx.li>
  * Copyright (C) 2009 Paul Sladen <libiphone@paul.sladen.org>
  *
  * This library is free software; you can redistribute it and/or modify
@@ -38,6 +38,19 @@
 extern "C" {
 #endif
 
+/** Device lookup options for usbmuxd_get_device. */
+enum usbmux_lookup_options {
+	DEVICE_LOOKUP_USBMUX = 1 << 1, /**< include USBMUX devices during lookup */
+	DEVICE_LOOKUP_NETWORK = 1 << 2, /**< include network devices during lookup */
+	DEVICE_LOOKUP_PREFER_NETWORK = 1 << 3 /**< prefer network connection if device is available via USBMUX *and* network */
+};
+
+/** Type of connection a device is available on */
+enum usbmux_connection_type {
+	CONNECTION_TYPE_USB = 1,
+	CONNECTION_TYPE_NETWORK
+};
+
 /**
  * Device information structure holding data to identify the device.
  * The relevant 'handle' should be passed to 'usbmuxd_connect()', to
@@ -46,10 +59,10 @@ extern "C" {
  */
 typedef struct {
 	uint32_t handle;
-	int product_id;
-	char udid[41];
-    uint32_t connection_speed;
-    char connection_type[256];
+	uint32_t product_id;
+	char udid[44];
+	enum usbmux_connection_type conn_type;
+	char conn_data[200];
 } usbmuxd_device_info_t;
 
 /**
@@ -88,64 +101,58 @@ typedef struct {
 typedef void (*usbmuxd_event_cb_t) (const usbmuxd_event_t *event, void *user_data);
 
 /**
- * Sets the socket type (Unix socket or TCP socket) libusbmuxd should use when connecting
- * to usbmuxd.
- *
- * @param value SOCKET_TYPE_UNIX or SOCKET_TYPE_TCP
- *
- * @return 0 on success or negative on error
+ * Subscription context type.
  */
-USBMUXD_API_MSC int usbmuxd_set_socket_type(enum usbmuxd_socket_type value);
+typedef struct usbmuxd_subscription_context* usbmuxd_subscription_context_t;
 
 /**
- * Gets the socket type (Unix socket or TCP socket) libusbmuxd should use when connecting
- * to usbmuxd.
+ * Subscribe a callback function to be called upon device add/remove events.
+ * This method can be called multiple times to register multiple callbacks
+ * since every subscription will have its own context (returned in the
+ * first parameter).
  *
- * @param value A pointer to an integer which will reveive the current socket type
- *
- * @return 0 on success or negative on error
- */
-USBMUXD_API_MSC int usbmuxd_get_socket_type(enum usbmuxd_socket_type* value);
-
-/**
- * Sets the TCP endpoint to which usbmuxd will connect if the socket type is set to
- * SOCKET_TYPE_TCP
- *
- * @param host The hostname or IP address to which to connect
- * @param port The port to which to connect.
- *
- * @return 0 on success or negative on error
- */
-USBMUXD_API_MSC int usbmuxd_set_tcp_endpoint(const char* host, uint16_t port);
-
-/**
- * Gets the TCP endpoint to which usbmuxd will connect if th esocket type is set to
- * SOCKET_TYPE_TCP
- *
- * @param host A pointer which will be set to the hostname or IP address to which to connect.
- *             The caller must free this string.
- * @param port The port to which to connect
- *
- * @return 0 on success or negative on error
- */
-USBMUXD_API_MSC int usbmuxd_get_tcp_endpoint(char** host, uint16_t* port);
-
-/**
- * Subscribe a callback function so that applications get to know about
- * device add/remove events.
- *
+ * @param context A pointer to a usbmuxd_subscription_context_t that will be
+ *    set upon creation of the subscription. The returned context must be
+ *    passed to usbmuxd_events_unsubscribe() to unsubscribe the callback.
  * @param callback A callback function that is executed when an event occurs.
+ * @param user_data Custom data passed on to the callback function. The data
+ *    needs to be kept available until the callback function is unsubscribed.
+ *
+ * @return 0 on success or a negative errno value.
+ */
+USBMUXD_API_MSC int usbmuxd_events_subscribe(usbmuxd_subscription_context_t *context, usbmuxd_event_cb_t callback, void *user_data);
+
+/**
+ * Unsubscribe callback function
+ *
+ * @param context A valid context as returned from usbmuxd_events_subscribe().
+ *
+ * @return 0 on success or a negative errno value.
+ */
+USBMUXD_API_MSC int usbmuxd_events_unsubscribe(usbmuxd_subscription_context_t context);
+
+/**
+ * Subscribe a callback (deprecated)
+ * @param callback A callback function that is executed when an event occurs.
+ * @param user_data Custom data passed on to the callback function. The data
+ *    needs to be kept available until the callback function is unsubscribed.
  *
  * @return 0 on success or negative on error.
+ *
+ * @note Deprecated. Use usbmuxd_events_subscribe and usbmuxd_events_unsubscribe instead.
+ * @see usbmuxd_events_subscribe
  */
 USBMUXD_API_MSC int usbmuxd_subscribe(usbmuxd_event_cb_t callback, void *user_data);
 
 /**
- * Unsubscribe callback.
+ * Unsubscribe callback (deprecated)
  *
- * @return only 0 for now.
+ * @return 0 on success or negative on error.
+ *
+ * @note Deprecated. Use usbmuxd_events_subscribe and usbmuxd_events_unsubscribe instead.
+ * @see usbmuxd_events_unsubscribe
  */
-USBMUXD_API_MSC int usbmuxd_unsubscribe();
+USBMUXD_API_MSC int usbmuxd_unsubscribe(void);
 
 /**
  * Contacts usbmuxd and retrieves a list of connected devices.
@@ -170,7 +177,12 @@ USBMUXD_API_MSC int usbmuxd_get_device_list(usbmuxd_device_info_t **device_list)
 USBMUXD_API_MSC int usbmuxd_device_list_free(usbmuxd_device_info_t **device_list);
 
 /**
- * Gets device information for the device specified by udid.
+ * Looks up the device specified by UDID and returns device information.
+ *
+ * @note This function only considers devices connected through USB. To
+ *      query devices available via network, use usbmuxd_get_device().
+ *
+ * @see usbmuxd_get_device
  *
  * @param udid A device UDID of the device to look for. If udid is NULL,
  *      This function will return the first device found.
@@ -183,21 +195,48 @@ USBMUXD_API_MSC int usbmuxd_device_list_free(usbmuxd_device_info_t **device_list
 USBMUXD_API_MSC int usbmuxd_get_device_by_udid(const char *udid, usbmuxd_device_info_t *device);
 
 /**
- * Request proxy connect to 
+ * Looks up the device specified by UDID with given options and returns
+ * device information.
  *
- * @param handle returned by 'usbmuxd_scan()'
+ * @param udid A device UDID of the device to look for. If udid is NULL,
+ *      this function will return the first device found.
+ * @param device Pointer to a previously allocated (or static)
+ *      usbmuxd_device_info_t that will be filled with the device info.
+ * @param options Specifying what device connection types should be
+ *      considered during lookup. Accepts bitwise or'ed values of
+ *      usbmux_lookup_options.
+ *      If 0 (no option) is specified it will default to DEVICE_LOOKUP_USBMUX.
+ *      To lookup both USB and network-connected devices, pass
+ *      DEVICE_LOOKUP_USBMUX | DEVICE_LOOKUP_NETWORK. If a device is available
+ *      both via USBMUX *and* network, it will select the USB connection.
+ *      This behavior can be changed by adding DEVICE_LOOKUP_PREFER_NETWORK
+ *      to the options in which case it will select the network connection.
+ *
+ * @see enum usbmux_lookup_options
+ *
+ * @return 0 if no matching device is connected, 1 if the device was found,
+ *    or a negative value on error.
+ */
+USBMUXD_API_MSC int usbmuxd_get_device(const char *udid, usbmuxd_device_info_t *device, enum usbmux_lookup_options options);
+
+/**
+ * Request proxy connection to the specified device and port.
+ *
+ * @param handle returned in the usbmux_device_info_t structure via
+ *      usbmuxd_get_device() or usbmuxd_get_device_list().
  *
  * @param tcp_port TCP port number on device, in range 0-65535.
  *	common values are 62078 for lockdown, and 22 for SSH.
  *
- * @return file descriptor socket of the connection, or -1 on error
+ * @return socket file descriptor of the connection, or a negative errno
+ *    value on error.
  */
-USBMUXD_API_MSC int usbmuxd_connect(const int handle, const unsigned short tcp_port);
+USBMUXD_API_MSC int usbmuxd_connect(const uint32_t handle, const unsigned short tcp_port);
 
 /**
  * Disconnect. For now, this just closes the socket file descriptor.
  *
- * @param sfd socker file descriptor returned by usbmuxd_connect()
+ * @param sfd socket file descriptor returned by usbmuxd_connect()
  *
  * @return 0 on success, -1 on error.
  */
@@ -275,6 +314,18 @@ USBMUXD_API_MSC int usbmuxd_read_pair_record(const char* record_id, char **recor
 USBMUXD_API_MSC int usbmuxd_save_pair_record(const char* record_id, const char *record_data, uint32_t record_size);
 
 /**
+ * Save a pairing record with device identifier
+ *
+ * @param record_id the record identifier of the pairing record to save
+ * @param device_id the device identifier of the connected device, or 0
+ * @param record_data buffer containing the pairing record data
+ * @param record_size size of the buffer passed in record_data
+ *
+ * @return 0 on success, a negative error value otherwise.
+ */
+USBMUXD_API_MSC int usbmuxd_save_pair_record_with_device_id(const char* record_id, uint32_t device_id, const char *record_data, uint32_t record_size);
+
+/**
  * Delete a pairing record
  *
  * @param record_id the record identifier of the pairing record to delete.
@@ -292,6 +343,49 @@ USBMUXD_API_MSC int usbmuxd_delete_pair_record(const char* record_id);
 USBMUXD_API_MSC void libusbmuxd_set_use_inotify(int set);
 
 USBMUXD_API_MSC void libusbmuxd_set_debug_level(int level);
+
+/**
+ * Sets the socket type (Unix socket or TCP socket) libusbmuxd should use when connecting
+ * to usbmuxd.
+ *
+ * @param value SOCKET_TYPE_UNIX or SOCKET_TYPE_TCP
+ *
+ * @return 0 on success or negative on error
+ */
+USBMUXD_API_MSC int usbmuxd_set_socket_type(enum usbmuxd_socket_type value);
+
+/**
+ * Gets the socket type (Unix socket or TCP socket) libusbmuxd should use when connecting
+ * to usbmuxd.
+ *
+ * @param value A pointer to an integer which will reveive the current socket type
+ *
+ * @return 0 on success or negative on error
+ */
+USBMUXD_API_MSC int usbmuxd_get_socket_type(enum usbmuxd_socket_type* value);
+
+/**
+ * Sets the TCP endpoint to which usbmuxd will connect if the socket type is set to
+ * SOCKET_TYPE_TCP
+ *
+ * @param host The hostname or IP address to which to connect
+ * @param port The port to which to connect.
+ *
+ * @return 0 on success or negative on error
+ */
+USBMUXD_API_MSC int usbmuxd_set_tcp_endpoint(const char* host, uint16_t port);
+
+/**
+ * Gets the TCP endpoint to which usbmuxd will connect if th esocket type is set to
+ * SOCKET_TYPE_TCP
+ *
+ * @param host A pointer which will be set to the hostname or IP address to which to connect.
+ *             The caller must free this string.
+ * @param port The port to which to connect
+ *
+ * @return 0 on success or negative on error
+ */
+USBMUXD_API_MSC int usbmuxd_get_tcp_endpoint(char** host, uint16_t* port);
 
 #ifdef __cplusplus
 }

@@ -1,38 +1,114 @@
-# libplist-win32
-[![Build status](https://ci.appveyor.com/api/projects/status/mb2do9aw242kax16/branch/msvc-master?svg=true)](https://ci.appveyor.com/project/qmfrederik/libplist/branch/msvc-master)
-[![Build Status](https://travis-ci.org/libimobiledevice-win32/libplist.svg?branch=msvc-master)](https://travis-ci.org/libimobiledevice-win32/libplist)
+# libplist
 
-Provides a native Windows build (using the Visual C++ compiler) of libplist, as well as continuous integration (CI) builds of libplist for Ubuntu, CentOS and RedHat Linux and macOS.
+*A small portable C library to handle Apple Property List files in binary or XML
+format.*
 
-## Where to report issues
-For general questions about libplist, see http://github.com/libimobiledevice/libplist. For questions specific to Visual C++, feel free to use the GitHub issue tracker
+![](https://github.com/libimobiledevice/libplist/workflows/build/badge.svg)
 
-## How to get the latest binaries
-The binaries for libplist are available as:
-* [NuGet CoApp packages](https://www.nuget.org/packages/libplist/) for Windows,
-* [apt-get packages](https://launchpad.net/~quamotion/+archive/ubuntu/ppa) for Ubuntu,
-* [yum packages](https://build.opensuse.org/package/show/home:qmfrederik/libplist) for CentOS and RedHat.
+## Features
 
-For Ubuntu Linux, run the following commands as root:
+The project provides an interface to read and write plist files in binary or
+XML format alongside a command-line utility named `plistutil`.
 
+Some key features are:
+
+- **Formats:** Supports binary and XML format
+- **Utility:** Provides a `plistutil` utility for the command-line
+- **Python:** Provides Cython based bindings for Python
+- **Tested:** Uses fuzzing and data compliance tests
+- **Efficient:** Lean library with performance and resources in mind
+
+## Installation / Getting started
+
+### Debian / Ubuntu Linux
+
+First install all required dependencies and build tools:
+```shell
+sudo apt-get install \
+	build-essential \
+	checkinstall \
+	git \
+	autoconf \
+	automake \
+	libtool-bin
 ```
-sudo add-apt-repository ppa:quamotion/ppa
-sudo apt-get update
-apt-get install libplist
+
+If you want to optionally build the documentation or Python bindings use:
+```shell
+sudo apt-get install \
+	doxygen \
+	cython
 ```
 
-For RedHat Linux, run the following commands as root:
-
-```
-cd /etc/yum.repos.d/
-wget http://download.opensuse.org/repositories/home:qmfrederik/RHEL_7/home:qmfrederik.repo
-yum install libplist
+Then clone the actual project repository:
+```shell
+git clone https://github.com/libimobiledevice/libplist.git
+cd libplist
 ```
 
-For CentOS Linux, run the following commands as root:
+Now you can build and install it:
+```shell
+./autogen.sh
+make
+sudo make install
+```
 
+## Usage
+
+Then simply run:
+```shell
+plistutil -i foobar.plist -o output.plist
 ```
-cd /etc/yum.repos.d/
-wget http://download.opensuse.org/repositories/home:qmfrederik/CentOS_7/home:qmfrederik.repo
-yum install libplist
+
+This converts the `foobar.plist` file to the opposite format, e.g. binary to
+XML or vice versa, and outputs it to the `output.plist` file.
+
+Please consult the usage information or manual page for a full documentation of
+available command line options:
+```shell
+plistutil --help
+man plistutil
 ```
+
+## Contributing
+
+We welcome contributions from anyone and are grateful for every pull request!
+
+If you'd like to contribute, please fork the `master` branch, change, commit and
+send a pull request for review. Once approved it can be merged into the main
+code base.
+
+If you plan to contribute larger changes or a major refactoring, please create a
+ticket first to discuss the idea upfront to ensure less effort for everyone.
+
+Please make sure your contribution adheres to:
+* Try to follow the code style of the project
+* Commit messages should describe the change well without being to short
+* Try to split larger changes into individual commits of a common domain
+* Use your real name and a valid email address for your commits
+
+We are still working on the guidelines so bear with us!
+
+## Links
+
+* Homepage: https://libimobiledevice.org/
+* Repository: https://git.libimobiledevice.org/libplist.git
+* Repository (Mirror): https://github.com/libimobiledevice/libplist.git
+* Issue Tracker: https://github.com/libimobiledevice/libplist/issues
+* Mailing List: https://lists.libimobiledevice.org/mailman/listinfo/libimobiledevice-devel
+* Twitter: https://twitter.com/libimobiledev
+
+## License
+
+This project is licensed under the [GNU Lesser General Public License v2.1](https://www.gnu.org/licenses/lgpl-2.1.en.html),
+also included in the repository in the `COPYING` file.
+
+## Credits
+
+Apple, iPhone, iPad, iPod, iPod Touch, Apple TV, Apple Watch, Mac, iOS,
+iPadOS, tvOS, watchOS, and macOS are trademarks of Apple Inc.
+
+This project is an independent software library and has not been authorized,
+sponsored, or otherwise approved by Apple Inc.
+
+README Updated on: 2020-06-12

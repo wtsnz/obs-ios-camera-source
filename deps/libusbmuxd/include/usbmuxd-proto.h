@@ -91,9 +91,6 @@ PACK(struct usbmuxd_device_record {
 	char serial_number[256];
 	uint16_t padding;
 	uint32_t location;
-    
-    uint32_t connection_speed;
-    char connection_type[256];
 });
 
 #ifdef __cplusplus

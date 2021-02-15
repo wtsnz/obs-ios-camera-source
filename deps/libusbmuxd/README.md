@@ -1,38 +1,66 @@
-# libusbmuxd-win32
-[![Build status](https://ci.appveyor.com/api/projects/status/pru5c9lgtx12q4xj?svg=true)](https://ci.appveyor.com/project/qmfrederik/libusbmuxd)
-[![Build Status](https://travis-ci.org/libimobiledevice-win32/libusbmuxd.svg?branch=msvc-master)](https://travis-ci.org/libimobiledevice-win32/libusbmuxd)
+# libusbmuxd
 
-Provides a native Windows build (using the Visual C++ compiler) of libusbmuxd, as well as continuous integration (CI) builds of libusbmuxd for Ubuntu, CentOS and RedHat Linux and macOS.
+## About
 
-## Where to report issues
-For general questions about libplist, see http://github.com/libimobiledevice/libusbmuxd. For questions specific to Visual C++, feel free to use the GitHub issue tracker
+A client library to multiplex connections from and to iOS devices by connecting
+to a socket provided by a usbmuxd daemon.
 
-## How to get the latest binaries
-The binaries for libplist are available as:
-* [NuGet CoApp packages](https://www.nuget.org/packages/libusbmuxd/) for Windows,
-* [apt-get packages](https://launchpad.net/~quamotion/+archive/ubuntu/ppa) for Ubuntu,
-* [yum packages](https://build.opensuse.org/package/show/home:qmfrederik/libusbmuxd) for CentOS and RedHat.
+## Requirements
 
-For Ubuntu Linux, run the following commands as root:
+Development Packages of:
+* libplist
 
+Software:
+* usbmuxd (Windows and Mac OS X can use the one provided by iTunes)
+* make
+* autoheader
+* automake
+* autoconf
+* libtool
+* pkg-config
+* gcc or clang
+
+Optional:
+* inotify (Linux only)
+
+## Installation
+
+To compile run:
+```bash
+./autogen.sh
+make
+sudo make install
 ```
-sudo add-apt-repository ppa:quamotion/ppa
-sudo apt-get update
-apt-get install libusbmuxd
+
+If dependent packages cannot be found when running autogen.sh (or configure)
+make sure that `pkg-config` is installed and set the `PKG_CONFIG_PATH` environment
+variable if required. It can be passed directly like this:
+
+```bash
+PKG_CONFIG_PATH=/usr/local/lib/pkgconfig ./autogen.sh
 ```
 
-For RedHat Linux, run the following commands as root:
+If you require a custom prefix or other option being passed to `./configure`
+you can pass them directly to `./autogen.sh` like this:
+```bash
+./autogen.sh --prefix=/opt/local --without-cython
+make
+sudo make install
+```
 
-```
-cd /etc/yum.repos.d/
-wget http://download.opensuse.org/repositories/home:qmfrederik/RHEL_7/home:qmfrederik.repo
-yum install libusbmuxd
-```
+## Who/What/Where?
 
-For CentOS Linux, run the following commands as root:
+* Home: https://www.libimobiledevice.org/
+* Code: `git clone https://git.libimobiledevice.org/libusbmuxd.git`
+* Code (Mirror): `git clone https://github.com/libimobiledevice/libusbmuxd.git`
+* Tickets: https://github.com/libimobiledevice/libusbmuxd/issues
+* Mailing List: https://lists.libimobiledevice.org/mailman/listinfo/libimobiledevice-devel
+* IRC: irc://irc.freenode.net#libimobiledevice
 
-```
-cd /etc/yum.repos.d/
-wget http://download.opensuse.org/repositories/home:qmfrederik/CentOS_7/home:qmfrederik.repo
-yum install libusbmuxd
-```
+## Credits
+
+Apple, iPhone, iPod, and iPod Touch are trademarks of Apple Inc.
+libimobiledevice is an independent software library and has not been
+authorized, sponsored, or otherwise approved by Apple Inc.
+
+README Updated on: 2019-06-20

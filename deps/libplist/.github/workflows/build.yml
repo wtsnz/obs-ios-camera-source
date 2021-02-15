@@ -1,0 +1,73 @@
+name: build
+
+on: [push]
+
+jobs:
+  build-linux-ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+    - name: install dependencies
+      run: sudo apt-get install cython
+    - uses: actions/checkout@v2
+    - name: autogen
+      run: ./autogen.sh
+    - name: make
+      run: make
+    - name: make check
+      run: make check
+  build-macOS:
+    runs-on: macOS-latest
+    steps:
+    - name: install dependencies
+      run: |
+          if test -x "`which port`"; then
+            sudo port install libtool autoconf automake
+          else
+            brew install libtool autoconf automake
+          fi
+          pip install cython
+      shell: bash
+    - uses: actions/checkout@v2
+    - name: autogen
+      run: ./autogen.sh
+    - name: make
+      run: make
+    - name: make check
+      run: make check
+  build-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - uses: msys2/setup-msys2@v2
+      with:
+        release: false
+        update: false
+        install: >-
+          base-devel
+          git
+          mingw-w64-x86_64-gcc
+          make
+          libtool
+          autoconf
+          automake-wrapper
+    - uses: actions/checkout@v2
+    - name: autogen
+      run: ./autogen.sh CC=gcc CXX=g++ --without-cython
+    - name: make
+      run: make
+    - name: make check
+      run: make check
+    - name: print test logs
+      run: |
+          for I in test/*.trs; do
+            RES=`grep ":test-result" $I |cut -d ":" -f 3`
+            if test $RES != PASS; then
+              TESTNAME=`basename $I .trs`
+              echo $TESTNAME:
+              cat test/$TESTNAME.log
+              echo
+            fi
+          done
+      shell: bash

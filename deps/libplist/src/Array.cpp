@@ -18,10 +18,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <stdlib.h>
 #include <plist/Array.h>
 
 #include <algorithm>
+#include <climits>
+#include <cstdlib>
 
 namespace PList
 {
@@ -31,29 +32,30 @@ Array::Array(Node* parent) : Structure(PLIST_ARRAY, parent)
     _array.clear();
 }
 
+static void array_fill(Array *_this, std::vector<Node*> array, plist_t node)
+{
+    plist_array_iter iter = NULL;
+    plist_array_new_iter(node, &iter);
+    plist_t subnode;
+    do {
+        subnode = NULL;
+        plist_array_next_item(node, iter, &subnode);
+        array.push_back( Node::FromPlist(subnode, _this) );
+    } while (subnode);
+    free(iter);
+}
+
 Array::Array(plist_t node, Node* parent) : Structure(parent)
 {
     _node = node;
-    uint32_t size = plist_array_get_size(_node);
-
-    for (uint32_t i = 0; i < size; i++)
-    {
-        plist_t subnode = plist_array_get_item(_node, i);
-        _array.push_back(  Node::FromPlist(subnode, this) );
-    }
+    array_fill(this, _array, _node);
 }
 
-Array::Array(const PList::Array& a) : Structure()
+Array::Array(const PList::Array& a)
 {
     _array.clear();
     _node = plist_copy(a.GetPlist());
-    uint32_t size = plist_array_get_size(_node);
-
-    for (uint32_t i = 0; i < size; i++)
-    {
-        plist_t subnode = plist_array_get_item(_node, i);
-        _array.push_back(  Node::FromPlist(subnode, this) );
-    }
+    array_fill(this, _array, _node);
 }
 
 Array& Array::operator=(PList::Array& a)
@@ -64,15 +66,8 @@ Array& Array::operator=(PList::Array& a)
         delete _array.at(it);
     }
     _array.clear();
-
     _node = plist_copy(a.GetPlist());
-    uint32_t size = plist_array_get_size(_node);
-
-    for (uint32_t i = 0; i < size; i++)
-    {
-        plist_t subnode = plist_array_get_item(_node, i);
-        _array.push_back(  Node::FromPlist(subnode, this) );
-    }
+    array_fill(this, _array, _node);
     return *this;
 }
 
@@ -124,6 +119,9 @@ void Array::Remove(Node* node)
     if (node)
     {
         uint32_t pos = plist_array_get_item_index(node->GetPlist());
+        if (pos == UINT_MAX) {
+            return;
+        }
         plist_array_remove_item(_node, pos);
         std::vector<Node*>::iterator it = _array.begin();
         it += pos;
@@ -147,4 +145,4 @@ unsigned int Array::GetNodeIndex(Node* node) const
     return std::distance (_array.begin(), it);
 }
 
-};
+}  // namespace PList

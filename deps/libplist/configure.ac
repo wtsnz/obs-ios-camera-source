@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.64)
-AC_INIT([libplist], [2.0.0], [https://github.com/libimobiledevice/libplist/issues],, [http://libimobiledevice.org])
+AC_INIT([libplist], [2.2.1], [https://github.com/libimobiledevice/libplist/issues],, [https://libimobiledevice.org])
 AM_INIT_AUTOMAKE([dist-bzip2 no-dist-gzip check-news])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
 AC_CONFIG_SRCDIR([src/])
@@ -15,7 +15,7 @@ dnl libtool versioning
 #                 changes to the signature and the semantic)
 #  ? :+1 : ?   == just internal changes
 # CURRENT : REVISION : AGE
-LIBPLIST_SO_VERSION=4:0:1
+LIBPLIST_SO_VERSION=6:0:3
 
 AC_SUBST(LIBPLIST_SO_VERSION)
 
@@ -54,7 +54,7 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT8_T
 
 # Checks for library functions.
-AC_CHECK_FUNCS([asprintf strcasecmp strdup strerror strndup stpcpy vasprintf gmtime_r localtime_r timegm strptime])
+AC_CHECK_FUNCS([asprintf strcasecmp strdup strerror strndup stpcpy vasprintf gmtime_r localtime_r timegm strptime memmem])
 
 # Checking endianness
 AC_C_BIGENDIAN([AC_DEFINE([__BIG_ENDIAN__], [1], [big endian])],
@@ -78,6 +78,8 @@ case ${host_os} in
     ;;
 esac
 AM_CONDITIONAL(WIN32, test x$win32 = xtrue)
+
+AC_SEARCH_LIBS([fmin],[m])
 
 # Check if struct tm has a tm_gmtoff member
 AC_CACHE_CHECK(for tm_gmtoff in struct tm, ac_cv_struct_tm_gmtoff,
@@ -121,7 +123,7 @@ fi
 if [test "x$CYTHON" != "xfalse"]; then
             PKG_PROG_PKG_CONFIG
             AC_MSG_CHECKING([for libplist Cython bindings])
-            CYTHON_PLIST_INCLUDE_DIR=$($PKG_CONFIG --variable=includedir libplist)/plist/cython
+            CYTHON_PLIST_INCLUDE_DIR=$($PKG_CONFIG --variable=includedir libplist-2.0)/plist/cython
             if [test ! -d "$CYTHON_PLIST_INCLUDE_DIR"]; then
                 CYTHON_PLIST_INCLUDE_DIR=.
                 cython_python_bindings=yes
@@ -141,7 +143,7 @@ GLOBAL_LDFLAGS="$PTHREAD_LIBS"
 
 AC_ARG_ENABLE(debug,
 AS_HELP_STRING([--enable-debug],
-               [enable debugging, default: no]),
+               [build debug message output code (default is no)]),
 [case "${enableval}" in
              yes) debug=yes ;;
              no)  debug=no ;;
@@ -150,7 +152,7 @@ esac],
 [debug=no])
 
 if (test "x$debug" = "xyes"); then
-       AC_DEFINE(DEBUG, 1, [Define if debug code should be enabled.])
+       AC_DEFINE(DEBUG, 1, [Define if debug message output code should be built.])
        GLOBAL_CFLAGS+=" -g"
 fi
 
@@ -266,10 +268,11 @@ AC_OUTPUT([
 Makefile
 libcnary/Makefile
 src/Makefile
-src/libplist.pc
-src/libplist++.pc
+src/libplist-2.0.pc
+src/libplist++-2.0.pc
 include/Makefile
 tools/Makefile
+docs/Makefile
 cython/Makefile
 test/Makefile
 fuzz/Makefile
