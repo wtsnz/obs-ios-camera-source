@@ -19,6 +19,11 @@ jobs:
       DepsPath32: '$(DepsBasePath)\win32'
       DepsPath64: '$(DepsBasePath)\win64'
       QtBaseDir: 'D:\QtDep'
+      vcpkgToolchain: 'c:/vcpkg/scripts/buildsystems/vcpkg.cmake'
+      VCPKG_DEFAULT_TRIPLET_64: 'x64-windows-static'
+      VCPKG_DEFAULT_TRIPLET_86: '86-windows-static'
+      OpenSSL32: 'c:/vcpkg/installed/x86-windows-static'
+      OpenSSL64: 'c:/vcpkg/installed/x64-windows-static'
       QTDIR32: '$(QtBaseDir)\5.10.1\msvc2017'
       QTDIR64: '$(QtBaseDir)\5.10.1\msvc2017_64'
       OBSPath: 'D:\obs-studio'
@@ -32,11 +37,24 @@ jobs:
           QtBaseDir: $(QtBaseDir)
   
       - task: Cache@2
+        displayName: Restore cached iOS Camera Plugin Dependencies
+        inputs:
+          key: 'obscam-cache-3 | "$(Agent.OS)"'
+          restoreKeys: |
+            obscam-cache-3 | "$(Agent.OS)"
+          path: 'c:\vcpkg\installed\'
+
+      - script: ./CI/install-ios-camera-dependencies.cmd
+        displayName: 'Install iOS Camera Plugin Dependencies'
+        env:
+          vcpkgToolchain: '$(vcpkgToolchain)'
+
+      - task: Cache@2
         displayName: Restore cached OBS Studio dependencies
         inputs:
-          key: 'obsdeps | "$(Agent.OS)"'
+          key: 'obsdeps-3 | "$(Agent.OS)"'
           restoreKeys: |
-            obsdeps | "$(Agent.OS)"
+            obsdeps-3 | "$(Agent.OS)"
           path: $(DepsBasePath)
   
       - script: ./CI/download-obs-deps.cmd
@@ -45,9 +63,9 @@ jobs:
       - task: Cache@2
         displayName: Restore cached OBS Studio builds
         inputs:
-          key: 'obs | "$(Agent.OS)"'
+          key: 'obs-build-2 | "$(Agent.OS)"'
           restoreKeys: |
-            obs | "$(Agent.OS)"
+            obs-build-2 | "$(Agent.OS)"
           path: $(OBSPath)
   
       - script: ./CI/checkout-cmake-obs-windows.cmd
@@ -79,6 +97,11 @@ jobs:
           QTDIR32: $(QTDIR32)
           QTDIR64: $(QTDIR64)
           OBSPath: $(OBSPath)
+          vcpkgToolchain: $(vcpkgToolchain)
+          VCPKG_DEFAULT_TRIPLET_64: ${VCPKG_DEFAULT_TRIPLET_64}
+          VCPKG_DEFAULT_TRIPLET_86: ${VCPKG_DEFAULT_TRIPLET_86}
+          OpenSSL32: $(OpenSSL32)
+          OpenSSL64: $(OpenSSL64)
   
       - task: MSBuild@1
         displayName: 'Build obs-ios-camera-source 32-bit'
@@ -137,5 +160,5 @@ jobs:
       - task: PublishBuildArtifacts@1
         inputs:
           pathtoPublish: './release'
-          artifactName: 'macos_build'
-  
+          artifactName: 'macos_build' 
+

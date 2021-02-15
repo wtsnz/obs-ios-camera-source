@@ -19,7 +19,7 @@ echo "[obs-ios-camera-plugin] Updating Homebrew.."
 brew update >/dev/null
 echo "[obs-ios-camera-plugin] Checking installed Homebrew formulas.."
 BREW_PACKAGES=$(brew list)
-BREW_DEPENDENCIES="ffmpeg libav cmake"
+BREW_DEPENDENCIES="ffmpeg libav cmake opensll"
 
 for DEPENDENCY in ${BREW_DEPENDENCIES}; do
     if echo "${BREW_PACKAGES}" | grep -q "^${DEPENDENCY}\$"; then

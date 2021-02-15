@@ -19,6 +19,8 @@
 #include "DeviceManager.hpp"
 #include <algorithm>
 #include <set>
+#include <libimobiledevice/libimobiledevice.h>
+#include <libimobiledevice/lockdown.h>
 
 namespace portal {
 
@@ -145,6 +147,40 @@ bool DeviceManager::stop()
 	return true;
 }
 
+int get_device_name(const char *udid, char **device_name) {
+
+    // Find the devices name
+    idevice_t lockdown_device = NULL;
+    idevice_new_with_options(&lockdown_device, udid, IDEVICE_LOOKUP_USBMUX);
+
+    if (!lockdown_device) {
+        return -1;
+    }
+
+    lockdownd_client_t lockdown = NULL;
+
+    if (LOCKDOWN_E_SUCCESS != lockdownd_client_new(lockdown_device, &lockdown, "obs-ios-camera-plugin")) {
+        idevice_free(lockdown_device);
+        // Failed to connect to the device
+        return -2;
+    }
+
+    char *lockdown_device_name = NULL;
+
+    if ((LOCKDOWN_E_SUCCESS != lockdownd_get_device_name(lockdown, &lockdown_device_name)) || !lockdown_device_name) {
+        fprintf(stderr, "ERROR: Could not get device name!\n");
+        // Failed to get device name
+        return -3;
+    }
+
+    idevice_free(lockdown_device);
+    lockdownd_client_free(lockdown);
+
+    *device_name = lockdown_device_name;
+
+    return 0;
+}
+
 bool DeviceManager::addDevice(const usbmuxd_device_info_t &device)
 {
 	// Filter out network connected devices
@@ -164,7 +200,14 @@ bool DeviceManager::addDevice(const usbmuxd_device_info_t &device)
 	if (it == devices.end()) {
 		Device::shared_ptr sp = Device::shared_ptr(new Device(device));
 		devices.insert(DeviceMap::value_type(device.udid, sp));
-		portal_log("PORTAL (%p): Added device: %i (%s)\n", this,
+
+        char *device_name = NULL;
+        if (get_device_name(device.udid, &device_name) == 0) {
+            sp->name = std::optional<std::string>{ std::string(device_name) };
+            free(device_name);
+        }
+
+        portal_log("PORTAL (%p): Added device: %i (%s)\n", this,
 			   device.product_id, device.udid);
 
 		if (onDeviceManagerDidAddDeviceCallback) {

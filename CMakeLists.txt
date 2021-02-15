@@ -191,10 +191,12 @@ add_library(portal STATIC
 	${portal_SOURCES}
 	${portal_HEADERS})
 
+add_subdirectory(deps/libimobiledevice)
+
 target_link_libraries(portal
 	libusbmuxd
+	libimobiledevice
 )
-
 
 ## -- 
 

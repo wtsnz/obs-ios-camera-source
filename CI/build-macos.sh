@@ -25,4 +25,5 @@ cmake .. \
 	-DOBS_FRONTEND_LIB="$(pwd)/../../obs-studio/build/UI/obs-frontend-api/libobs-frontend-api.dylib" \
 	-DCMAKE_BUILD_TYPE=RelWithDebInfo \
 	-DCMAKE_INSTALL_PREFIX=/usr \
+	-DOPENSSL_ROOT_DIR=/usr/local/opt/openssl \
 && make -j4
