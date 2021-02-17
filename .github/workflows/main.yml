@@ -1,0 +1,146 @@
+name: 'CI Multiplatform Build'
+
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+    branches:
+      - master
+    tags:
+      - '*'
+  pull_request:
+    paths-ignore:
+      - '**.md'
+    branches:
+      - master
+
+jobs:
+  macos64:
+    name: 'macOS 64-bit'
+    runs-on: [macos-latest]
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v2.3.3
+        with:
+          submodules: 'recursive'
+      - name: 'Fetch Git Tags'
+        run: |
+          git fetch --prune --unshallow
+          echo "OBS_GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
+          echo "OBS_GIT_HASH=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "OBS_GIT_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+
+      - name: 'Install dependencies'
+        run: ./CI/install-dependencies-macos.sh
+        
+      - name: 'Build OBS'
+        run: ./CI/install-build-obs-macos.sh
+        
+      - name: 'Build obs-ios-camera-source'
+        run: ./CI/build-macos.sh
+        
+      - name: 'Package obs-ios-camera-source'
+        run: ./CI/package-macos.sh
+
+      - name: 'Record filename'
+        run: |
+          echo "RELEASE_FILE_NAME=$(basename release/*.pkg)" >> $GITHUB_ENV
+          ls -l release/*.pkg
+
+      - name: 'Publish Release'
+        if: success()
+        uses: actions/upload-artifact@v2.2.0
+        with:
+          name: '${{ env.RELEASE_FILE_NAME }}'
+          path: ./release/*.pkg
+
+  win64:
+    name: 'Windows 64-bit'
+    runs-on: [windows-latest]
+    env:
+      build_config: RelWithDebInfo
+      DepsBasePath: 'D:\obsdependencies'
+      DepsPath32: 'D:\obsdependencies\win32'
+      DepsPath64: 'D:\obsdependencies\win64'
+      QtBaseDir: 'D:\QtDep'
+      QTDIR32: 'D:\QtDep\5.10.1\msvc2017'
+      QTDIR64: 'D:\QtDep\5.10.1\msvc2017_64'
+      OBSPath: 'D:\obs-studio'
+
+    steps:
+      - name: 'Add msbuild to PATH'
+        uses: microsoft/setup-msbuild@v1.0.2
+
+      - name: 'Checkout'
+        uses: actions/checkout@v2.3.3
+        with:
+          submodules: 'recursive'
+      - name: 'Fetch Git Tags'
+        run: |
+          git fetch --prune --unshallow
+
+      - name: 'Install Qt'
+        run: ./CI/install-qt-win.cmd
+
+      - name: 'Restore cached OBS Studio dependencies'
+        id: obs-studio
+        uses: actions/cache@v2.1.2
+        env:
+          CACHE_NAME: 'obs-studio'
+        with:
+          path: ${{ env.DepsBasePath }}
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}
+
+      - name: 'Download OBS Studio dependencies'
+        run: ./CI/download-obs-deps.cmd
+
+      - name: 'Restore cached OBS Studio builds'
+        id: obs-studio-build
+        uses: actions/cache@v2.1.2
+        env:
+          CACHE_NAME: 'obs-studio-build'
+        with:
+          path: ${{ env.OBSPath }}
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}
+
+      - name: 'Checkout & CMake OBS Studio'
+        run: ./CI/checkout-cmake-obs-windows.cmd
+        
+      - name: 'Build OBS Studio 32-bit'
+        run: msbuild /m /p:Configuration=${{ env.build_config }} ${{ env.OBSPath }}\build32\obs-studio.sln
+
+      - name: 'Build OBS Studio 64-bit'
+        run: msbuild /m /p:Configuration=${{ env.build_config }} ${{ env.OBSPath }}\build64\obs-studio.sln
+
+      - name: 'CMake obs-ios-camera-source'
+        run: ./CI/prepare-windows.cmd
+
+      - name: 'Build obs-ios-camera-source 32-bit'
+        run: msbuild /m /p:Configuration=${{ env.build_config }} .\build32\obs-ios-camera-source.sln
+
+      - name: 'Build obs-ios-camera-source 64-bit'
+        run: msbuild /m /p:Configuration=${{ env.build_config }} .\build64\obs-ios-camera-source.sln
+
+      - name: 'Package obs-ios-camera-source'
+        run: ./CI/package-windows.cmd
+
+      - name: 'Record Release Filenames'
+        shell: bash
+        run: |
+          echo "RELEASE_ZIP_FILE_NAME=$(basename package/*.zip)" >> $GITHUB_ENV
+          echo "RELEASE_EXE_FILE_NAME=$(basename package/*.exe)" >> $GITHUB_ENV
+
+      - name: 'Publish Release .zip'
+        if: success()
+        uses: actions/upload-artifact@v2.2.0
+        with:
+          name: ${{ env.RELEASE_ZIP_FILE_NAME }}
+          path: ./package/${{ env.RELEASE_ZIP_FILE_NAME }}
+
+      - name: 'Publish Release .exe'
+        if: success()
+        uses: actions/upload-artifact@v2.2.0
+        with:
+          name: ${{ env.RELEASE_EXE_FILE_NAME }}
+          path: ./package/${{ env.RELEASE_EXE_FILE_NAME }}
+
