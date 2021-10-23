@@ -24,6 +24,9 @@
 #endif
 
 #include "Protocol.hpp"
+#ifndef ntohl
+#include <netinet/in.h>
+#endif
 
 namespace portal {
 
