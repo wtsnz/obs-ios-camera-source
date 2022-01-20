@@ -7,7 +7,7 @@ set(OPENSSL_USE_STATIC_LIBS TRUE)
 
 message("OpenSSL include dir: ${OPENSSL_INCLUDE_DIR}")
 message("OpenSSL libraries: ${OPENSSL_LIBRARIES}")
-
+message("Dirent dir: ${DIRENT_DIR}")
 message("other: ${OPENSSL_SSL_LIBRARIES} ${OPENSSL_CRYPTO_LIBRARIES}")
 
 set(libimobiledevice_HEADERS
@@ -95,10 +95,10 @@ target_include_directories(libimobiledevice
 	PUBLIC include
 )
 
-# if(WIN32)
-#     find_path(DIRENT_INCLUDE_DIRS "dirent.h")
-#     target_include_directories(libimobiledevice PRIVATE ${DIRENT_INCLUDE_DIRS})
-# endif()
+if(WIN32)
+    find_path(DIRENT_INCLUDE_DIRS "dirent.h" HINTS ${DIRENT_DIR})
+    target_include_directories(libimobiledevice PRIVATE ${DIRENT_INCLUDE_DIRS})
+endif()
 
 target_link_libraries(libimobiledevice
 PRIVATE
