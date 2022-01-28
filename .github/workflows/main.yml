@@ -21,7 +21,6 @@ on:
       - "**.md"
     branches:
       - master
-      - ci-updates # using for testing, will remove when ready for merge
     tags:
       - "*"
   pull_request:
