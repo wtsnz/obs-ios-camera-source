@@ -25,6 +25,10 @@ endif()
 
 if(WIN32)
 	find_library(WS2_32_LIBRARY ws2_32)
+
+	# Provide dirent path hint for the libimobiledevice CMakeLists
+	set(DIRENT_DIR "deps/dirent/")
+	cmake_path(ABSOLUTE_PATH DIRENT_DIR OUTPUT_VARIABLE DIRENT_DIR)
 endif()
 
 # ---- libcnary
