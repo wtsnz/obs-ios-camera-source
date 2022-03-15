@@ -115,7 +115,7 @@ void IOSCameraInput::deviceManagerDidUpdateDeviceList(
 		// User will have to configure the plugin manually when more than one device is plugged in
 		// due to the fact that multiple instances of the plugin can't subscribe to device events...
 
-		connectToDevice();
+		connectToDevice(false);
 	}
 }
 
@@ -184,7 +184,7 @@ void IOSCameraInput::activate()
 	blog(LOG_INFO, "Activating");
 	active = true;
 
-	connectToDevice();
+	connectToDevice(false);
 }
 
 void IOSCameraInput::deactivate()
@@ -192,7 +192,7 @@ void IOSCameraInput::deactivate()
 	blog(LOG_INFO, "Deactivating");
 	active = false;
 
-	connectToDevice();
+	connectToDevice(false);
 }
 
 void IOSCameraInput::loadSettings(obs_data_t *settings)
@@ -218,12 +218,12 @@ void IOSCameraInput::setDeviceUUID(std::string uuid)
 		state.selectedDeviceUUID = uuid;
 	}
 
-	connectToDevice();
+	connectToDevice(false);
 }
 
 void IOSCameraInput::reconnectToDevice()
 {
-	connectToDevice();
+	connectToDevice(true);
 }
 
 void IOSCameraInput::resetDecoder()
@@ -238,7 +238,7 @@ void IOSCameraInput::resetDecoder()
 	obs_source_output_video(source, NULL);
 }
 
-void IOSCameraInput::connectToDevice()
+void IOSCameraInput::connectToDevice(bool force)
 {
 	blog(LOG_DEBUG, "Connecting to device: %s",
 	     state.selectedDeviceUUID.value_or("none").c_str());
@@ -259,36 +259,47 @@ void IOSCameraInput::connectToDevice()
 		// Clear the video frame when a setting changes
 		resetDecoder();
 		return;
-	}
+    }
+    // Else there is a selected device
+    else {
 
-	// https://stackoverflow.com/questions/44217316/how-do-i-use-stdoptional-in-c
-	// Apple compiler hasn't implemented std::optional.value() in < macos 10.14,
-	// work around this by fetching the value by * method.
-	std::string selectedUUID = *state.selectedDeviceUUID;
+        // https://stackoverflow.com/questions/44217316/how-do-i-use-stdoptional-in-c
+        // Apple compiler hasn't implemented std::optional.value() in < macos 10.14,
+        // work around this by fetching the value by * method.
+        std::string selectedUUID = *state.selectedDeviceUUID;
 
-	// Disconnect all connection controllers
-	for (const auto &[uuid, connectionController] : connectionControllers) {
-		if (connectionController != nullptr) {
-			connectionController->disconnect();
-		}
-	}
+        if (isConnectingToDifferentDevice || force) {
+            // Disconnect to all connection controllers if we're switching the active connection
+            for (const auto &[uuid, connectionController] : connectionControllers) {
+                if (connectionController != nullptr) {
+                    connectionController->disconnect();
+                }
+            }
 
-	if (isConnectingToDifferentDevice) {
-		resetDecoder();
-	}
+            resetDecoder();
+        }
 
-	auto shouldConnect = !(disconnectOnInactive == true && active == false);
+        // Connect
+        auto shouldConnect = !(disconnectOnInactive == true && active == false);
 
-	// Then connect to the selected device if the plugin is active, or inactive and connected on inactive.
-	for (const auto &[uuid, connectionController] : connectionControllers) {
-		if (connectionController != nullptr) {
-			if (uuid == selectedUUID && shouldConnect) {
-				blog(LOG_DEBUG,
-				     "Starting connection controller");
-				connectionController->start();
-			}
-		}
-	}
+        // Then connect to the selected device if the plugin is active, or inactive and connected on inactive.
+        for (const auto &[uuid, connectionController] : connectionControllers) {
+            if (connectionController != nullptr) {
+                if (uuid == selectedUUID) {
+
+                    if (shouldConnect) {
+                        blog(LOG_DEBUG,
+                             "Starting connection controller");
+                        connectionController->start();
+
+                    } else {
+                        // Disconnect on Inactive is enabled, which causes the device to disconnect when not in an active scene.
+                        connectionController->disconnect();
+                    }
+                }
+            }
+        }
+    }
 }
 
 #pragma mark - Settings Config
