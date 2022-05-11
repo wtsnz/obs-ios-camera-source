@@ -53,7 +53,7 @@ public:
 	void setDeviceUUID(std::string uuid);
 	void reconnectToDevice();
 	void resetDecoder();
-	void connectToDevice();
+	void connectToDevice(bool force);
 
 	struct MobileCameraDevice {
 		std::string uuid;
