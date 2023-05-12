@@ -31,6 +31,15 @@ if(WIN32)
 	cmake_path(ABSOLUTE_PATH DIRENT_DIR OUTPUT_VARIABLE DIRENT_DIR)
 endif()
 
+if(DEFINED USE_SYSTEM_LIBS)
+	find_package(PkgConfig REQUIRED)
+	pkg_check_modules(PLIST REQUIRED libplist++-2.0)
+	pkg_check_modules(USBMUX REQUIRED libusbmuxd-2.0)
+	pkg_check_modules(IMOBILEDEV REQUIRED libimobiledevice-1.0)
+endif()
+
+if(NOT PLIST_FOUND EQUAL 1)
+
 # ---- libcnary
 
 set(libcnary_HEADERS
@@ -113,6 +122,10 @@ target_link_libraries(libplist
 	libcnary
 	)
 
+endif() # NOT PLIST_FOUND
+
+if(NOT USBMUX_FOUND EQUAL 1)
+
 #------- libusbmuxd
 
 set(libusbmuxd_HEADERS
@@ -167,6 +180,7 @@ if(WIN32)
   target_link_libraries(libusbmuxd wsock32 ws2_32)
 endif()
 
+endif() # NOT USBMUX_FOUND
 
 # -------- Portal Lib
 
@@ -191,6 +205,13 @@ include_directories(portal include
 	deps/portal/src/
 )
 
+if(DEFINED USE_SYSTEM_LIBS)
+add_library(portal SHARED ${portal_SOURCES} ${portal_HEADERS})
+target_link_libraries(portal PUBLIC ${IMOBILEDEV_LIBRARIES} ${USBMUXD_LIBRARIES})
+target_link_directories(portal PUBLIC ${IMOBILEDEV_LIBRARY_DIRS} ${USBMUXD_LIBRARY_DIRS})
+
+else()
+
 add_library(portal STATIC
 	${portal_SOURCES}
 	${portal_HEADERS})
@@ -201,6 +222,8 @@ target_link_libraries(portal
 	libusbmuxd
 	libimobiledevice
 )
+
+endif() # DEFINED USE_SYSTEM_LIBS
 
 ## -- 
 
