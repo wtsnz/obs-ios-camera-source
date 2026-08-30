@@ -31,8 +31,7 @@ Channel::Channel(int port_, int conn_)
 
 Channel::~Channel()
 {
-	running = false;
-	WaitForInternalThreadToExit();
+	close();
 	portal_log("%s: Deallocating\n", __func__);
 }
 
@@ -60,7 +59,12 @@ bool Channel::close()
 		WaitForInternalThreadToExit();
 	}
 
-	auto ret = usbmuxd_disconnect(conn);
+	int ret = 0;
+	if (conn >= 0) {
+		ret = usbmuxd_disconnect(conn);
+		conn = -1;
+	}
+	setState(State::Disconnected);
 
 	return ret;
 }

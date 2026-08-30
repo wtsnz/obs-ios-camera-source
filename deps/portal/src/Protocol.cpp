@@ -17,10 +17,13 @@
  */
 
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 
 #ifdef WIN32
 #include <winsock2.h>
+#else
+#include <arpa/inet.h>
 #endif
 
 #include "Protocol.hpp"
@@ -51,16 +54,12 @@ SimpleDataPacketProtocol::processData(std::vector<char> data)
 
 	auto packets = std::vector<DataPacket>();
 
-	uint32_t length = 0;
-
 	while (buffer.size() >= headerLength) {
 
 		// Read the portal frame out
 		_PortalFrame frame;
 
 		memcpy(&frame, &buffer[0], sizeof(_PortalFrame));
-		length = ntohl(length);
-
 		frame.version = ntohl(frame.version);
 		frame.type = ntohl(frame.type);
 		frame.tag = ntohl(frame.tag);

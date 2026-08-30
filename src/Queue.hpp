@@ -20,8 +20,10 @@
 #define WorkQueue_hpp
 
 #include <list>
+#include <atomic>
 #include <mutex>
 #include <condition_variable>
+#include <vector>
 
 class PacketItem
 {

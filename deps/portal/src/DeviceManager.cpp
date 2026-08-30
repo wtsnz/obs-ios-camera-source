@@ -18,6 +18,7 @@
 
 #include "DeviceManager.hpp"
 #include <algorithm>
+#include <cstring>
 #include <set>
 #include <libimobiledevice/libimobiledevice.h>
 #include <libimobiledevice/lockdown.h>
@@ -53,12 +54,7 @@ DeviceManager::DeviceManager()
 
 DeviceManager::~DeviceManager()
 {
-	worker_stopping = true;
-	worker_condition.notify_all();
-
-	if (worker_thread.joinable()) {
-		worker_thread.join();
-	}
+	stop();
 }
 
 void DeviceManager::worker_loop()
@@ -98,6 +94,9 @@ void DeviceManager::updateDevices()
 			changed_devices = true;
 		}
 	}
+	if (device_list) {
+		usbmuxd_device_list_free(&device_list);
+	}
 
 	// Remove any devices that are no longer connected
 	auto devices_copy = devices;
@@ -124,6 +123,7 @@ bool DeviceManager::start()
 		return false;
 	}
 
+	worker_stopping = false;
 	updateDevices();
 
 	setState(State::Connected);
@@ -135,12 +135,11 @@ bool DeviceManager::start()
 
 bool DeviceManager::stop()
 {
-	if (getState() != State::Connected) {
-		return false;
+	worker_stopping = true;
+	worker_condition.notify_all();
+	if (worker_thread.joinable()) {
+		worker_thread.join();
 	}
-
-	//Always returns 0
-	//usbmuxd_unsubscribe();
 
 	setState(State::Disconnected);
 
@@ -224,13 +223,13 @@ bool DeviceManager::addDevice(const usbmuxd_device_info_t &device)
 void DeviceManager::removeDevice(const usbmuxd_device_info_t &device)
 {
 	DeviceMap::iterator it = devices.find(device.udid);
-	auto sp = it->second;
-
-	if (it != devices.end()) {
-		devices.erase(it);
-		portal_log("PORTAL (%p): Removed device: %i (%s)\n", this,
-			   device.product_id, device.udid);
+	if (it == devices.end()) {
+		return;
 	}
+	auto sp = it->second;
+	devices.erase(it);
+	portal_log("PORTAL (%p): Removed device: %i (%s)\n",
+		   static_cast<void *>(this), device.product_id, device.udid);
 
 	if (onDeviceManagerDidRemoveDeviceCallback) {
 		onDeviceManagerDidRemoveDeviceCallback(sp);

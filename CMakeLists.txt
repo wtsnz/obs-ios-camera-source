@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.16...4.4)
 project(obs-ios-camera-source)
 
 set(CMAKE_PREFIX_PATH "${QTDIR}")
@@ -7,13 +7,21 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_CXX_STANDARD 17)
 
-if (WIN32 OR APPLE)
+set(LINUX_BUILD FALSE)
+if(UNIX AND NOT APPLE)
+	set(LINUX_BUILD TRUE)
+	set(CMAKE_AUTOMOC OFF)
+	set(CMAKE_AUTOUIC OFF)
+	find_package(libobs CONFIG REQUIRED)
+	find_package(PkgConfig REQUIRED)
+	pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET libavcodec libavutil)
+	pkg_check_modules(IMOBILEDEVICE REQUIRED IMPORTED_TARGET libimobiledevice-1.0)
+	pkg_check_modules(USBMUXD REQUIRED IMPORTED_TARGET libusbmuxd-2.0)
+else()
     include(external/FindLibObs.cmake)
+    find_package(LibObs REQUIRED)
+    find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil)
 endif()
-
-find_package(LibObs REQUIRED)
-
-find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil)
 # find_ffmpeg_library(avcodec)
 # find_ffmpeg_library(avutil)
 
@@ -30,6 +38,8 @@ if(WIN32)
 	set(DIRENT_DIR "deps/dirent/")
 	cmake_path(ABSOLUTE_PATH DIRENT_DIR OUTPUT_VARIABLE DIRENT_DIR)
 endif()
+
+if(NOT LINUX_BUILD)
 
 # ---- libcnary
 
@@ -202,6 +212,35 @@ target_link_libraries(portal
 	libimobiledevice
 )
 
+else()
+
+set(portal_HEADERS
+	deps/portal/src/Channel.hpp
+	deps/portal/src/Device.hpp
+	deps/portal/src/Protocol.hpp
+	deps/portal/src/logging.h
+	deps/portal/src/DeviceConnection.hpp
+	deps/portal/src/DeviceManager.hpp
+)
+
+set(portal_SOURCES
+	deps/portal/src/Channel.cpp
+	deps/portal/src/Device.cpp
+	deps/portal/src/Protocol.cpp
+	deps/portal/src/DeviceConnection.cpp
+	deps/portal/src/DeviceManager.cpp
+)
+
+add_library(portal STATIC ${portal_SOURCES} ${portal_HEADERS})
+set_target_properties(portal PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_include_directories(portal PUBLIC deps/portal/src)
+target_link_libraries(portal PUBLIC
+	PkgConfig::IMOBILEDEVICE
+	PkgConfig::USBMUXD
+)
+
+endif()
+
 ## -- 
 
 set(ENABLE_PROGRAMS false)
@@ -283,11 +322,20 @@ if(MSVC)
 endif()
 
 
-target_link_libraries(obs-ios-camera-source 
-	libobs
-	portal
-	${FFMPEG_LIBRARIES}
-)
+if(LINUX_BUILD)
+	target_link_libraries(obs-ios-camera-source
+		OBS::libobs
+		portal
+		PkgConfig::FFMPEG
+	)
+	set_target_properties(obs-ios-camera-source PROPERTIES PREFIX "")
+else()
+	target_link_libraries(obs-ios-camera-source
+		libobs
+		portal
+		${FFMPEG_LIBRARIES}
+	)
+endif()
  
 # --- End of section ---
 
@@ -401,3 +449,27 @@ if(APPLE)
 		${COCOA})
 endif()
 # -- End of section --
+
+if(LINUX_BUILD)
+	include(GNUInstallDirs)
+	install(TARGETS obs-ios-camera-source
+		LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}/obs-plugins")
+	install(DIRECTORY data/
+		DESTINATION "${CMAKE_INSTALL_DATADIR}/obs/obs-plugins/obs-ios-camera-source")
+
+	set(OBS_USER_PLUGIN_ROOT
+		"$ENV{HOME}/.config/obs-studio/plugins/obs-ios-camera-source"
+		CACHE PATH "Per-user OBS plugin bundle directory")
+	add_custom_target(install-user
+		COMMAND "${CMAKE_COMMAND}" -E make_directory
+			"${OBS_USER_PLUGIN_ROOT}/bin/64bit"
+			"${OBS_USER_PLUGIN_ROOT}/data"
+		COMMAND "${CMAKE_COMMAND}" -E copy
+			"$<TARGET_FILE:obs-ios-camera-source>"
+			"${OBS_USER_PLUGIN_ROOT}/bin/64bit/"
+		COMMAND "${CMAKE_COMMAND}" -E copy_directory
+			"${CMAKE_CURRENT_SOURCE_DIR}/data"
+			"${OBS_USER_PLUGIN_ROOT}/data"
+		DEPENDS obs-ios-camera-source
+		COMMENT "Installing obs-ios-camera-source for the current user")
+endif()

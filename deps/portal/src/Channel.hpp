@@ -19,6 +19,7 @@
 #pragma once
 
 #include <thread>
+#include <atomic>
 #include <mutex>
 #include <usbmuxd.h>
 

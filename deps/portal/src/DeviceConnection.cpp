@@ -37,6 +37,7 @@ DeviceConnection::DeviceConnection(Device::shared_ptr device, int port)
 
 DeviceConnection::~DeviceConnection()
 {
+    disconnect();
     portal_log("%s: Deallocating\n", __func__);
 }
 
@@ -51,7 +52,6 @@ bool DeviceConnection::connect()
 	setState(State::Connecting);
 
 	auto connectTimeoutMs = 200;
-	int retval = 0;
 	auto deadline = std::chrono::steady_clock::now() +
 			std::chrono::milliseconds(connectTimeoutMs);
 
@@ -66,7 +66,6 @@ bool DeviceConnection::connect()
 			channel->start();
 			return 0;
 		}
-		retval = socketHandle;
 	}
 
 	setState(State::FailedToConnect);
@@ -76,14 +75,13 @@ bool DeviceConnection::connect()
 
 bool DeviceConnection::disconnect() 
 {
-    if (getState() != State::Connected) {
+    if (!channel) {
+        setState(State::Disconnected);
         return false;
     }
 
     auto ret = channel->close();
-    if (ret == 0) {
-        channel = nullptr; // Dealloc the channel
-    }
+    channel = nullptr;
 
     setState(State::Disconnected);
 
@@ -122,7 +120,7 @@ void DeviceConnection::channelDidReceiveData(std::vector<char> data)
 }
 
 
-void DeviceConnection::channelDidReceivePacket(std::vector<char> packet, int type, int tag)
+void DeviceConnection::channelDidReceivePacket(std::vector<char>, int, int)
 {
 
 }
