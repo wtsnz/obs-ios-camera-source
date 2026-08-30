@@ -122,7 +122,7 @@ void IOSCameraInput::deviceManagerDidUpdateDeviceList(
 void IOSCameraInput::deviceManagerDidChangeState(
 	portal::DeviceManager::State state)
 {
-	blog(LOG_INFO, "deviceManagerDidChangeState %i", state);
+	blog(LOG_INFO, "deviceManagerDidChangeState %i", static_cast<int>(state));
 	std::cout << "DeviceManager::didChangeState: " << state << std::endl;
 }
 
@@ -176,7 +176,19 @@ void IOSCameraInput::deviceManagerDidRemoveDevice(
 
 IOSCameraInput ::~IOSCameraInput()
 {
-
+	deviceManager.onDeviceManagerDidUpdateDeviceListCallback = nullptr;
+	deviceManager.onDeviceManagerDidChangeStateCallback = nullptr;
+	deviceManager.onDeviceManagerDidAddDeviceCallback = nullptr;
+	deviceManager.onDeviceManagerDidRemoveDeviceCallback = nullptr;
+	deviceManager.stop();
+	for (auto &[uuid, controller] : connectionControllers) {
+		UNUSED_PARAMETER(uuid);
+		if (controller) {
+			controller->onProcessPacketCallback = nullptr;
+			controller->disconnect();
+		}
+	}
+	connectionControllers.clear();
 }
 
 void IOSCameraInput::activate()
@@ -302,7 +314,7 @@ void IOSCameraInput::connectToDevice(bool force)
     }
 }
 
-#pragma mark - Settings Config
+// Settings configuration
 
 static bool refresh_devices(obs_properties_t *props, obs_property_t *p,
 			    void *data)
@@ -352,7 +364,7 @@ static bool reconnect_to_device(obs_properties_t *props, obs_property_t *p,
 	return false;
 }
 
-#pragma mark - Plugin Callbacks
+// Plugin callbacks
 
 static const char *GetIOSCameraInputName(void *)
 {
@@ -407,10 +419,10 @@ static obs_properties_t *GetIOSCameraProperties(void *data)
 
 	refresh_devices(ppts, dev_list, data);
 
-	obs_properties_add_button(ppts, "setting_refresh_devices",
-				  "Refresh Devices", refresh_devices);
-	obs_properties_add_button(ppts, "setting_button_connect_to_device",
-				  "Reconnect to Device", reconnect_to_device);
+	obs_properties_add_button2(ppts, "setting_refresh_devices",
+				   "Refresh Devices", refresh_devices, nullptr);
+	obs_properties_add_button2(ppts, "setting_button_connect_to_device",
+				   "Reconnect to Device", reconnect_to_device, nullptr);
 
 	obs_property_t *latency_modes = obs_properties_add_list(
 		ppts, SETTING_PROP_LATENCY,

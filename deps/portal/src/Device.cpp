@@ -29,11 +29,12 @@ Device::Device(const usbmuxd_device_info_t &device)
 	  _uuid(_device.udid),
 	  _productId(std::to_string(_device.product_id))
 {
-	portal_log("Added %p to device list\n", this);
+	portal_log("Added %p to device list\n", static_cast<void *>(this));
 }
 
 Device::Device(const Device &other)
-	: _connected(other._connected),
+	: std::enable_shared_from_this<Device>(),
+	  _connected(other._connected),
 	  _device(other._device),
 	  _uuid(other._uuid)
 {
@@ -126,7 +127,7 @@ Device::~Device()
 {
 	disconnect();
 	//removeFromDeviceList();
-	portal_log("Removed %p from device list\n", this);
+	portal_log("Removed %p from device list\n", static_cast<void *>(this));
 }
 
 std::ostream &operator<<(std::ostream &os, const Device &v)

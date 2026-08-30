@@ -30,6 +30,7 @@ extern "C" {
 #endif
 
 #include <libavcodec/avcodec.h>
+#include <libavutil/hwcontext.h>
 #include <libavutil/log.h>
 
 #ifdef _MSC_VER
@@ -39,16 +40,31 @@ extern "C" {
 struct ffmpeg_decode
 {
 	AVCodecContext *decoder;
+#if LIBAVCODEC_VERSION_MAJOR >= 59
+	const AVCodec *codec;
+#else
 	AVCodec *codec;
+#endif
 
 	AVFrame *frame;
+	AVFrame *software_frame;
+	AVBufferRef *hardware_device;
+	enum AVPixelFormat hardware_pixel_format;
+	enum AVHWDeviceType hardware_device_type;
+	bool hardware_active;
 
 	uint8_t *packet_buffer;
 	size_t packet_size;
 };
 
 extern int ffmpeg_decode_init(struct ffmpeg_decode *decode, enum AVCodecID id);
+extern int ffmpeg_decode_init_hardware(struct ffmpeg_decode *decode,
+					       enum AVCodecID id,
+					       enum AVHWDeviceType type);
 extern void ffmpeg_decode_free(struct ffmpeg_decode *decode);
+extern void ffmpeg_decode_flush(struct ffmpeg_decode *decode);
+extern enum AVCodecID ffmpeg_detect_video_codec(const uint8_t *data,
+						 size_t size);
 
 extern bool ffmpeg_decode_audio(struct ffmpeg_decode *decode,
 								uint8_t *data, size_t size,

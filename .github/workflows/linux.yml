@@ -1,0 +1,33 @@
+name: Linux build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes \
+            build-essential \
+            cmake \
+            libavcodec-dev \
+            libavutil-dev \
+            libimobiledevice-dev \
+            libobs-dev \
+            libusbmuxd-dev \
+            pkg-config
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
+      - name: Build
+        run: cmake --build build --parallel 2
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+      - name: Check linkage
+        run: ldd -r build/obs-ios-camera-source.so
