@@ -452,6 +452,7 @@ endif()
 
 if(LINUX_BUILD)
 	include(GNUInstallDirs)
+	include(CTest)
 	install(TARGETS obs-ios-camera-source
 		LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}/obs-plugins")
 	install(DIRECTORY data/
@@ -472,4 +473,15 @@ if(LINUX_BUILD)
 			"${OBS_USER_PLUGIN_ROOT}/data"
 		DEPENDS obs-ios-camera-source
 		COMMENT "Installing obs-ios-camera-source for the current user")
+
+	if(BUILD_TESTING)
+		add_executable(codec-detection-test
+			tests/codec-detection.c
+			src/ffmpeg-decode.c)
+		target_include_directories(codec-detection-test PRIVATE src)
+		target_link_libraries(codec-detection-test PRIVATE
+			OBS::libobs
+			PkgConfig::FFMPEG)
+		add_test(NAME codec-detection COMMAND codec-detection-test)
+	endif()
 endif()

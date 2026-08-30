@@ -68,5 +68,7 @@ private:
     obs_source_audio audio_frame;
     
     AudioDecoder audio_decoder;
+
+    std::mutex mMutex;
     
 };

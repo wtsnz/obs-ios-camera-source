@@ -71,6 +71,42 @@ void ffmpeg_decode_free(struct ffmpeg_decode *decode)
     memset(decode, 0, sizeof(*decode));
 }
 
+void ffmpeg_decode_flush(struct ffmpeg_decode *decode)
+{
+    if (decode->decoder)
+        avcodec_flush_buffers(decode->decoder);
+}
+
+enum AVCodecID ffmpeg_detect_video_codec(const uint8_t *data, size_t size)
+{
+    if (!data || size < 5)
+        return AV_CODEC_ID_NONE;
+
+    for (size_t i = 0; i + 4 < size; i++)
+    {
+        size_t header = 0;
+        if (data[i] == 0 && data[i + 1] == 0 && data[i + 2] == 1)
+            header = i + 3;
+        else if (i + 5 < size && data[i] == 0 && data[i + 1] == 0 &&
+                 data[i + 2] == 0 && data[i + 3] == 1)
+            header = i + 4;
+        else
+            continue;
+
+        const uint8_t h264_type = data[header] & 0x1f;
+        const uint8_t hevc_type = (data[header] >> 1) & 0x3f;
+
+        /* Parameter-set NAL units identify the codec without guessing from
+         * slice data, whose type values can overlap between H.264 and HEVC. */
+        if (hevc_type >= 32 && hevc_type <= 34)
+            return AV_CODEC_ID_HEVC;
+        if (h264_type == 7 || h264_type == 8)
+            return AV_CODEC_ID_H264;
+    }
+
+    return AV_CODEC_ID_NONE;
+}
+
 static inline enum video_format convert_pixel_format(int f)
 {
     switch (f)
@@ -163,7 +199,8 @@ static inline void copy_data(struct ffmpeg_decode *decode, uint8_t *data,
     }
 
     memset(decode->packet_buffer + size, 0, AV_INPUT_BUFFER_PADDING_SIZE);
-    memcpy(decode->packet_buffer, data, size);
+    if (size)
+        memcpy(decode->packet_buffer, data, size);
 }
 
 bool ffmpeg_decode_audio(struct ffmpeg_decode *decode,
@@ -249,7 +286,8 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode,
     packet.size = (int)size;
     packet.pts = *ts;
 
-    if (decode->codec->id == AV_CODEC_ID_H264 && obs_avc_keyframe(data, size))
+    if (data && size && decode->codec->id == AV_CODEC_ID_H264 &&
+        obs_avc_keyframe(data, size))
     {
         packet.flags |= AV_PKT_FLAG_KEY;
     }
@@ -261,7 +299,10 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode,
             return false;
     }
 
-    ret = avcodec_send_packet(decode->decoder, &packet);
+    if (data && size)
+        ret = avcodec_send_packet(decode->decoder, &packet);
+    else
+        ret = 0;
     if (ret == 0)
         ret = avcodec_receive_frame(decode->decoder, decode->frame);
 

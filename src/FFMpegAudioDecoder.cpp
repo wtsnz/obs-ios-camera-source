@@ -40,7 +40,12 @@ void FFMpegAudioDecoder::Init()
 
 void FFMpegAudioDecoder::Flush()
 {
-    // Clear the queue
+    while (mQueue.size() > 0) {
+        auto *item = mQueue.remove();
+        delete item;
+    }
+    std::lock_guard<std::mutex> lock(mMutex);
+    ffmpeg_decode_flush(audio_decoder);
 }
 
 void FFMpegAudioDecoder::Drain()
@@ -63,6 +68,7 @@ void FFMpegAudioDecoder::Input(std::vector<char> packet, int type, int tag)
 
 void FFMpegAudioDecoder::processPacketItem(PacketItem *packetItem)
 {
+    std::lock_guard<std::mutex> lock(mMutex);
     uint64_t cur_time = os_gettime_ns();
 
     if (!ffmpeg_decode_valid(audio_decoder))
@@ -79,21 +85,24 @@ void FFMpegAudioDecoder::processPacketItem(PacketItem *packetItem)
 
     if (packetItem->getType() == 102) {
 
-        bool got_output;
-
-        bool success = ffmpeg_decode_audio(audio_decoder, data, packet.size(), &audio_frame, &got_output);
-
-        if (!success)
-        {
-            blog(LOG_WARNING, "Error decoding audio");
-            return;
-        }
-
-        if (got_output && source != NULL)
-        {
-            audio_frame.timestamp = cur_time;
-            obs_source_output_audio(source, &audio_frame);
-        }
+        bool first = true;
+        bool emitted = false;
+        bool got_output = false;
+        do {
+            bool success = ffmpeg_decode_audio(
+                audio_decoder, first ? data : nullptr,
+                first ? packet.size() : 0, &audio_frame, &got_output);
+            first = false;
+            if (!success) {
+                blog(LOG_WARNING, "Error decoding audio packet");
+                return;
+            }
+            if (got_output && source != NULL) {
+                audio_frame.timestamp = emitted ? os_gettime_ns() : cur_time;
+                obs_source_output_audio(source, &audio_frame);
+                emitted = true;
+            }
+        } while (got_output);
     }
 }
 

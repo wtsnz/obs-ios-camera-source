@@ -41,13 +41,11 @@ void FFMpegVideoDecoder::Flush()
 {
     // Clear the queue
     while(this->mQueue.size() > 0) {
-        this->mQueue.remove();
+        delete this->mQueue.remove();
     }
 
-    mMutex.lock();
-    // Re-initialize the decoder
-    ffmpeg_decode_free(video_decoder);
-    mMutex.unlock();
+    std::lock_guard<std::mutex> lock(mMutex);
+    ffmpeg_decode_flush(video_decoder);
 }
 
 void FFMpegVideoDecoder::Drain()
@@ -71,41 +69,61 @@ void FFMpegVideoDecoder::Input(std::vector<char> packet, int type, int tag)
 static const char *ffmpeg_decode_video_name = "obs_camera_ffmpeg_decode_video";
 void FFMpegVideoDecoder::processPacketItem(PacketItem *packetItem)
 {
-	mMutex.lock();
-	uint64_t cur_time = os_gettime_ns();
-	if (!ffmpeg_decode_valid(video_decoder)) {
-		if (ffmpeg_decode_init(video_decoder, AV_CODEC_ID_H264) < 0) {
-			blog(LOG_WARNING, "Could not initialize video decoder");
-			mMutex.unlock();
-			return;
-		}
-	}
-
+	std::lock_guard<std::mutex> lock(mMutex);
 	auto packet = packetItem->getPacket();
 	unsigned char *data = (unsigned char *)packet.data();
-	long long ts = cur_time;
+	const enum AVCodecID detected_codec =
+		ffmpeg_detect_video_codec(data, packet.size());
+
+	if (ffmpeg_decode_valid(video_decoder) &&
+	    detected_codec != AV_CODEC_ID_NONE &&
+	    video_decoder->codec->id != detected_codec) {
+		blog(LOG_INFO, "FFmpeg: switching video decoder from %s to %s",
+		     avcodec_get_name(video_decoder->codec->id),
+		     avcodec_get_name(detected_codec));
+		ffmpeg_decode_free(video_decoder);
+	}
+
+	if (!ffmpeg_decode_valid(video_decoder)) {
+		const enum AVCodecID codec = detected_codec != AV_CODEC_ID_NONE
+						      ? detected_codec
+						      : AV_CODEC_ID_H264;
+		if (ffmpeg_decode_init(video_decoder, codec) < 0) {
+			blog(LOG_WARNING, "Could not initialize %s video decoder",
+			     avcodec_get_name(codec));
+			return;
+		}
+		blog(LOG_INFO, "FFmpeg: initialized %s video decoder",
+		     avcodec_get_name(codec));
+	}
 
     if (packetItem->getType() == 101) {
         profile_start(ffmpeg_decode_video_name);
 
-        bool got_output;
-        bool success = ffmpeg_decode_video(video_decoder, data, packet.size(), &ts,
-                                           &video_frame, &got_output);
+		bool first = true;
+		bool got_output = false;
+		do {
+			long long ts = (long long)os_gettime_ns();
+			bool success = ffmpeg_decode_video(
+				video_decoder, first ? data : nullptr,
+				first ? packet.size() : 0, &ts, &video_frame,
+				&got_output);
+			first = false;
+			if (!success) {
+				blog(LOG_WARNING, "Error decoding %s video packet",
+				     avcodec_get_name(video_decoder->codec->id));
+				break;
+			}
+			if (got_output && source != nullptr) {
+				video_frame.timestamp = ts >= 0
+							? (uint64_t)ts
+							: os_gettime_ns();
+				obs_source_output_video(source, &video_frame);
+			}
+		} while (got_output);
 
-        profile_end(ffmpeg_decode_video_name);
-        if (!success)
-        {
-            blog(LOG_WARNING, "Error decoding video");
-            mMutex.unlock();
-            return;
-        }
-
-		if (got_output && source != nullptr) {
-			video_frame.timestamp = cur_time;
-			obs_source_output_video(source, &video_frame);
-		}
+		profile_end(ffmpeg_decode_video_name);
 	}
-	mMutex.unlock();
 }
 
 void *FFMpegVideoDecoder::run() {
@@ -136,4 +154,3 @@ void *FFMpegVideoDecoder::run() {
     }
     return NULL;
 }
-

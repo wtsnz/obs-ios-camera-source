@@ -53,6 +53,9 @@ struct ffmpeg_decode
 
 extern int ffmpeg_decode_init(struct ffmpeg_decode *decode, enum AVCodecID id);
 extern void ffmpeg_decode_free(struct ffmpeg_decode *decode);
+extern void ffmpeg_decode_flush(struct ffmpeg_decode *decode);
+extern enum AVCodecID ffmpeg_detect_video_codec(const uint8_t *data,
+						 size_t size);
 
 extern bool ffmpeg_decode_audio(struct ffmpeg_decode *decode,
 								uint8_t *data, size_t size,
