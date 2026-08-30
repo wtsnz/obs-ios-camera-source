@@ -88,13 +88,29 @@ void FFMpegVideoDecoder::processPacketItem(PacketItem *packetItem)
 		const enum AVCodecID codec = detected_codec != AV_CODEC_ID_NONE
 						      ? detected_codec
 						      : AV_CODEC_ID_H264;
-		if (ffmpeg_decode_init(video_decoder, codec) < 0) {
+		int result;
+		if (codec == AV_CODEC_ID_HEVC) {
+			result = ffmpeg_decode_init_hardware(
+				video_decoder, codec, AV_HWDEVICE_TYPE_CUDA);
+		} else {
+			result = ffmpeg_decode_init(video_decoder, codec);
+		}
+
+		if (result < 0) {
 			blog(LOG_WARNING, "Could not initialize %s video decoder",
 			     avcodec_get_name(codec));
 			return;
 		}
-		blog(LOG_INFO, "FFmpeg: initialized %s video decoder",
-		     avcodec_get_name(codec));
+		if (video_decoder->hardware_active) {
+			blog(LOG_INFO,
+			     "FFmpeg: initialized %s video decoder using %s hardware acceleration",
+			     avcodec_get_name(codec),
+			     av_hwdevice_get_type_name(
+				     video_decoder->hardware_device_type));
+		} else {
+			blog(LOG_INFO, "FFmpeg: initialized %s software video decoder",
+			     avcodec_get_name(codec));
+		}
 	}
 
     if (packetItem->getType() == 101) {
@@ -110,8 +126,20 @@ void FFMpegVideoDecoder::processPacketItem(PacketItem *packetItem)
 				&got_output);
 			first = false;
 			if (!success) {
-				blog(LOG_WARNING, "Error decoding %s video packet",
-				     avcodec_get_name(video_decoder->codec->id));
+				const bool hardware_failed =
+					video_decoder->hardware_active;
+				blog(LOG_WARNING,
+				     "Error decoding %s video packet%s",
+				     avcodec_get_name(video_decoder->codec->id),
+				     hardware_failed
+					     ? "; falling back to software"
+					     : "");
+				if (hardware_failed) {
+					const enum AVCodecID codec =
+						video_decoder->codec->id;
+					ffmpeg_decode_free(video_decoder);
+					ffmpeg_decode_init(video_decoder, codec);
+				}
 				break;
 			}
 			if (got_output && source != nullptr) {

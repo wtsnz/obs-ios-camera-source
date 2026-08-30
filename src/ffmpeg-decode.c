@@ -25,7 +25,23 @@
 #endif
 #include <obs-avc.h>
 
-int ffmpeg_decode_init(struct ffmpeg_decode *decode, enum AVCodecID id)
+static enum AVPixelFormat select_hardware_format(AVCodecContext *context,
+                                                  const enum AVPixelFormat *formats)
+{
+    struct ffmpeg_decode *decode = context->opaque;
+    for (const enum AVPixelFormat *format = formats;
+         *format != AV_PIX_FMT_NONE; format++)
+    {
+        if (*format == decode->hardware_pixel_format)
+            return *format;
+    }
+
+    return formats[0];
+}
+
+static int ffmpeg_decode_init_internal(struct ffmpeg_decode *decode,
+                                       enum AVCodecID id,
+                                       enum AVHWDeviceType hardware_type)
 {
     int ret;
 
@@ -36,6 +52,36 @@ int ffmpeg_decode_init(struct ffmpeg_decode *decode, enum AVCodecID id)
         return -1;
 
     decode->decoder = avcodec_alloc_context3(decode->codec);
+    if (!decode->decoder)
+        return AVERROR(ENOMEM);
+
+    if (hardware_type != AV_HWDEVICE_TYPE_NONE)
+    {
+        const AVCodecHWConfig *configuration = NULL;
+        for (int index = 0;
+             (configuration = avcodec_get_hw_config(decode->codec, index));
+             index++)
+        {
+            if ((configuration->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX) &&
+                configuration->device_type == hardware_type)
+            {
+                decode->hardware_pixel_format = configuration->pix_fmt;
+                break;
+            }
+        }
+
+        if (configuration &&
+            av_hwdevice_ctx_create(&decode->hardware_device, hardware_type,
+                                   NULL, NULL, 0) >= 0)
+        {
+            decode->hardware_device_type = hardware_type;
+            decode->hardware_active = true;
+            decode->decoder->opaque = decode;
+            decode->decoder->get_format = select_hardware_format;
+            decode->decoder->hw_device_ctx =
+                av_buffer_ref(decode->hardware_device);
+        }
+    }
 
     ret = avcodec_open2(decode->decoder, decode->codec, NULL);
     if (ret < 0)
@@ -55,6 +101,18 @@ int ffmpeg_decode_init(struct ffmpeg_decode *decode, enum AVCodecID id)
     return 0;
 }
 
+int ffmpeg_decode_init(struct ffmpeg_decode *decode, enum AVCodecID id)
+{
+    return ffmpeg_decode_init_internal(decode, id, AV_HWDEVICE_TYPE_NONE);
+}
+
+int ffmpeg_decode_init_hardware(struct ffmpeg_decode *decode,
+                                enum AVCodecID id,
+                                enum AVHWDeviceType type)
+{
+    return ffmpeg_decode_init_internal(decode, id, type);
+}
+
 void ffmpeg_decode_free(struct ffmpeg_decode *decode)
 {
     if (decode->decoder)
@@ -64,6 +122,12 @@ void ffmpeg_decode_free(struct ffmpeg_decode *decode)
 
     if (decode->frame)
         av_frame_free(&decode->frame);
+
+    if (decode->software_frame)
+        av_frame_free(&decode->software_frame);
+
+    if (decode->hardware_device)
+        av_buffer_unref(&decode->hardware_device);
 
     if (decode->packet_buffer)
         bfree(decode->packet_buffer);
@@ -273,6 +337,7 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode,
     AVPacket packet = {0};
     int got_frame = false;
     enum video_format new_format;
+    AVFrame *decoded_frame;
     int ret;
 
     *got_output = false;
@@ -316,13 +381,37 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode,
     else if (!got_frame)
         return true;
 
-    for (size_t i = 0; i < MAX_AV_PLANES; i++)
+    decoded_frame = decode->frame;
+    if (decode->hardware_active &&
+        decode->frame->format == decode->hardware_pixel_format)
     {
-        frame->data[i] = decode->frame->data[i];
-        frame->linesize[i] = decode->frame->linesize[i];
+        if (!decode->software_frame)
+        {
+            decode->software_frame = av_frame_alloc();
+            if (!decode->software_frame)
+                return false;
+        }
+
+        av_frame_unref(decode->software_frame);
+        ret = av_hwframe_transfer_data(decode->software_frame,
+                                       decode->frame, 0);
+        if (ret < 0)
+            return false;
+
+        ret = av_frame_copy_props(decode->software_frame, decode->frame);
+        if (ret < 0)
+            return false;
+
+        decoded_frame = decode->software_frame;
     }
 
-    new_format = convert_pixel_format(decode->frame->format);
+    for (size_t i = 0; i < MAX_AV_PLANES; i++)
+    {
+        frame->data[i] = decoded_frame->data[i];
+        frame->linesize[i] = decoded_frame->linesize[i];
+    }
+
+    new_format = convert_pixel_format(decoded_frame->format);
     if (new_format != frame->format)
     {
         bool success;
@@ -330,7 +419,7 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode,
 
         frame->format = new_format;
         frame->full_range =
-        decode->frame->color_range == AVCOL_RANGE_JPEG;
+        decoded_frame->color_range == AVCOL_RANGE_JPEG;
 
         range = frame->full_range ? VIDEO_RANGE_FULL : VIDEO_RANGE_PARTIAL;
 
@@ -346,10 +435,10 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode,
         }
     }
 
-    *ts = decode->frame->pts;
+    *ts = decoded_frame->pts;
 
-    frame->width = decode->frame->width;
-    frame->height = decode->frame->height;
+    frame->width = decoded_frame->width;
+    frame->height = decoded_frame->height;
     frame->flip = false;
 
     if (frame->format == VIDEO_FORMAT_NONE)

@@ -1,6 +1,7 @@
 #include "ffmpeg-decode.h"
 
 #include <assert.h>
+#include <stdlib.h>
 
 int main(void)
 {
@@ -17,6 +18,16 @@ int main(void)
 	assert(ffmpeg_detect_video_codec(unknown, sizeof(unknown)) ==
 	       AV_CODEC_ID_NONE);
 	assert(ffmpeg_detect_video_codec(NULL, 0) == AV_CODEC_ID_NONE);
+
+	if (getenv("REQUIRE_CUDA_HEVC")) {
+		struct ffmpeg_decode decoder = {0};
+		assert(ffmpeg_decode_init_hardware(
+			       &decoder, AV_CODEC_ID_HEVC,
+			       AV_HWDEVICE_TYPE_CUDA) == 0);
+		assert(decoder.hardware_active);
+		assert(decoder.hardware_device_type == AV_HWDEVICE_TYPE_CUDA);
+		ffmpeg_decode_free(&decoder);
+	}
 
 	return 0;
 }
